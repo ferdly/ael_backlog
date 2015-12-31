@@ -6,6 +6,7 @@ description = Generate SQL that will write the proper Auto Entity Label (AEL)str
 ; five reasons: 1) it is parallel to how SQL composes its DUMP file 2) it is more immediately readable without a highly complicated WHERE clause 3) it allows the SQL Admin to test line-by-line if she wishes, or 10 at a time, or 100 or... 4) personally, it seems easier to run SQL in a remote database than to try to make something that runs on a server (explain better) 5) the generated SQL is very useful as documentation of the bulk operation that this is (for those of us that are documentation nerds)
 package = QIQgroup Tools
 core = 7.x
+dependencies[] = auto_entitylabel
 files[] = ael_backlog.module
 files[] = src/backlog_update_composer.php
 files[] = src/instantiate_backlog_update_composer.php
