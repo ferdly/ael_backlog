@@ -1,0 +1,19 @@
+name = Auto Entity Label Backlog
+description = Generate SQL that will write the proper Auto Entity Label (AEL)string for content that already existed before the Auto Entity Label was applied, by content.
+; only for drush for now, in fact a problem that engendered work within drush
+; (extended description) Also, the SQL will purposely be written with an
+; individual line for each Entity Lable that will be UPDATED -- this is for
+; five reasons: 1) it is parallel to how SQL composes its DUMP file 2) it is more immediately readable without a highly complicated WHERE clause 3) it allows the SQL Admin to test line-by-line if she wishes, or 10 at a time, or 100 or... 4) personally, it seems easier to run SQL in a remote database than to try to make something that runs on a server (explain better) 5) the generated SQL is very useful as documentation of the bulk operation that this is (for those of us that are documentation nerds)
+package = QIQgroup Tools
+core = 7.x
+files[] = ael_backlog.module
+files[] = src/backlog_update_composer.php
+files[] = src/instantiate_backlog_update_composer.php
+
+
+
+; Additional Notes
+; WHERE might only be Entity ID, although 'type'/'bundle' may be included in the WHERE clause Out of an Abundance of Caution (OOAAOC) and to make explicit the paralell to AEL
+; Indeed, since the obvious use case would be to run this after installing and and configuring AEL the process of testing a line at a time is also a good confirmation that the configuration is what you intend.
+; It should be noted that there is no tracking (as migrate does) the status of any given record, thus the result SQL will include UPDATE statements for all applicable entities even where AEL has already correctly applied its 'mask'. This brings up the use case where you stumble upon an error 2 months down the road of using AEL and determine that you need to append Entity ID to the Label in order to insure that the Label is unique.
+; Note to Developer -- perhaps Migrate can already serve this purpose (it could also probably make moot the computed_field_toosl module in the same manner). Oh well.
