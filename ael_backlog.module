@@ -31,4 +31,12 @@ function _drush_execute_command($command = NULL, $limit = 'EEMPTY', $bundle = NU
     $message .= " [$limit]";
   drupal_set_message(t($message), $type);
   drupal_set_message(t("[message set {$type_debug_string}]"), $type);
+  $test_output_array = array(
+    'Feather'=>'Named for his Tail',
+    'Marcy'=>'Named for Mt. Marcy in the Adirondacks',
+    'Chester'=>'Named for Chester Creek',
+    'Marais'=>'Named for Grand Marais on the North Shore of Lake Superior',
+    );
+  // $label->output_string =  '<pre>' . print_r($test_output_array, TRUE) . '</pre>';
+  drush_print($label->output_string);
 }
