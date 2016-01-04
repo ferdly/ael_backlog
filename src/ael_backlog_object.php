@@ -47,7 +47,15 @@ class ael_backlog_object
         if ($this->output_message_type != 'success') {
             return;
         }
-        $this->unpack_mask();
+        $this->unpack_mask_pattern();
+        if ($this->output_message_type != 'success') {
+            return;
+        }
+        $this->unpack_mask_php();
+        if ($this->output_message_type != 'success') {
+            return;
+        }
+        $this->unpack_mask_bundles();
         if ($this->output_message_type != 'success') {
             return;
         }
@@ -100,7 +108,7 @@ class ael_backlog_object
         return;
     }
 
-    public function unpack_mask ()
+    public function unpack_mask_pattern ()
     {
         $brk = "\r\n"; // could be cflf or lf or...
         $pattern = $this->ael_config_pattern;
@@ -141,6 +149,25 @@ class ael_backlog_object
         return;
     }
 
+    public function unpack_mask_php (){
+        /**
+         * @todo - unsupported at first juncture
+         * @circleback - purposely left for later
+         */
+        return;
+    }
+
+    public function unpack_mask_bundles (){
+        /**
+         * @Todo - based on pattern and php gather the bundles required to compose SQL
+         * @circleback - all steps regarding php are left for later
+         * @BUG this is test of upper bug
+         * @fixMe I guess this is broken but not buggy (like an editing circleback)
+         * @cosmetic this will rarely exist in doxygen since php is rarely cosmetic
+         */
+        return;
+    }
+
     public function gather_output ()
     {
         //skeleton
@@ -163,68 +190,5 @@ class ael_backlog_object
         $this->output_string = '<pre>' . print_r($this, TRUE) . '</pre>';
         return;
     }
-/* <called methods> prefixed with underscore to indicate this */
-public function pattern_to_sql_smarty($chunk) {
-    $bracket_count = substr_count ( $chunk , '[') + substr_count ( $chunk , '[');
-    if($bracket_count !== 2){
-    #\_ OOAAOC re-testing that bracket count === 2
-        $this->output_message = '"pattern chunk" contains an invalid number of square-bracket characters. Workaround is pending';
-        $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
-        return $chunk;
-    }
-    $is_node_based = substr($chunk, 0, 6);
-    if($is_node_based !== '[node:'){
-    #\_ OOAAOC re-testing that bracket count === 2
-        $this->output_message = '"pattern chunk" is NOT node-based. Additional Entities are pending';
-        $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
-        return $chunk;
-    }
-    $new_chunk = str_replace($is_node_based, 'n.', $chunk);
-    $new_chunk = str_replace(']', '', $new_chunk);
-    $colon_count = substr_count ( $new_chunk , ':');
-    if ($colon_count == 1 ) {
-        $new_chunk = $this->reference_join($chunk); //ORIGINAL
-    }elseif($colon_count > 1){
-        $this->output_message = '"pattern chunk" has more than 1 colons. Additional Entity Reference Chain Support is pending';
-        $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
-        return $new_chunk;
-    }
-    return $new_chunk;
-}
-
-public function reference_join($chunk){
-        #\_ only node for now, see calling script
-        $break = ''; // maybe crlf or lf or whatever, but nothing for now, so always include necessary spaces
-        $reference_join = array();
-        $new_chunk = $chunk;
-        $new_chunk = str_replace('[node:', 'n.', $chunk);
-        $new_chunk = str_replace('.', '_', $new_chunk);
-        $new_chunk = str_replace('-', '_', $new_chunk);
-        $new_chunk = str_replace(':', '.', $new_chunk);
-        $new_chunk = str_replace(']', '', $new_chunk);
-        $dot_position = strpos($new_chunk, '.');
-        $alias = substr($new_chunk, 0, $dot_position);
-        $tablename = $new_chunk;
-        $dot_position = strpos($tablename, '.') + 1;
-        $tablename = substr($tablename, $dot_position);
-        // $dot_position = strpos($tablename, ':');
-        // $tablename = substr($tablename, 0, $dot_position);
-        $tablename = 'field_data_' . $tablename;
-        $join = 'LEFT JOIN ';
-        $declaration = $tablename . ' ' . $alias;
-        $join .= $declaration . ' ' . $break;
-        $join .= 'ON n.nid = ' . $alias . '.nid';
-        $tablename_array = $this->mask_sql_join_array['tablename'];
-        if (1 == 1 && !in_array($tablename, $tablename_array)) {
-            $index = count($tablename_array);
-            $this->mask_sql_join_array['tablename'][$index] = $tablename;
-            $this->mask_sql_join_array['alias'][$index] = $alias;
-            $this->mask_sql_join_array['join'][$index] = $join;
-        }
-        return $new_chunk;
-}
-
-/* <called methods> */
-
 
 }
