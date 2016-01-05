@@ -25,9 +25,9 @@ class ael_backlog_object
     var $output_message_type = 'success';//assume the best
     var $stack = array();
     var $stack_type = array();
-    var $crlf = "\r\n";
-    var $tab = "    ";
-    var $space = " ";
+    var $crlf = "zCRLFz";
+    var $tab = "zTABz";
+    var $space = "zSPACEz";
     var $temp_ouput;
 
     public function  __construct($command, $bundle, $entity)
@@ -144,7 +144,7 @@ class ael_backlog_object
 
     public function unpack_mask_pattern ()
     {
-        $brk = "\r\n"; // could be cflf or lf or...
+        $crlf = $this->crlf;
         $pattern = $this->ael_config_pattern;
         $pattern = str_replace('|', 'zPIPEz', $pattern);
         $pattern = str_replace(' ', 'zSPACEz', $pattern);
@@ -170,24 +170,6 @@ class ael_backlog_object
         $this->mask_config_array = $field_array;
         $this->mask_field_array = $field_array;
         $this->mask_join_array = $join_array;
-        return;
-        /**
-         * @circleback code below could be useful at composition phase
-         * @todo remove return above when is end of function
-         *
-         * @var        Function
-         */
-        $mask_sql_smarty = implode(' + ', $pattern_sql_array);
-        $mask_sql_smarty = 'SELECT ' . $brk . $mask_sql_smarty . ' ';
-        $mask_sql_smarty .= $brk . 'FROM node n';
-        $join_array = $this->mask_sql_join_array['join'];
-        foreach ($join_array as $index => $join_singleton) {
-            $mask_sql_smarty .= ' ' . $brk . $join_singleton;
-        }
-        $mask_sql_smarty .= ' ' . $brk . 'WHERE n.nid = {nid}';
-        $this->mask_sql_smarty = $mask_sql_smarty;
-        $update_sql_smarty = 'UPDATE node SET title=(' . $mask_sql_smarty . ') WHERE nid = {nid}';
-        $this->update_sql_smarty = $update_sql_smarty;
         return;
     }
 
@@ -215,6 +197,8 @@ class ael_backlog_object
         /**
          * @circleback - all steps regarding php are left for later
          */
+        $crlf = $this->crlf;
+        $tab = $this->tab;
         $mask_base_table = $this->entity_array[$this->entity]['table'];
         $mask_base_alias = $this->entity_array[$this->entity]['alias'];
         $mask_base_primary = $this->entity_array[$this->entity]['primary'];
@@ -240,19 +224,19 @@ class ael_backlog_object
             $this->mask_field_array[$index]['sql'] = $chunk_sql;
         }
         $mask_sql_smarty = '';
-        $concat_string = 'CONCAT( ';
+        $concat_string = 'CONCAT( '. $crlf . $tab;
         $comma_string = '';
         foreach ($this->mask as $index => $chunk) {
             $concat_string .= $comma_string;
            if (!empty($this->mask_field_array[$index]['sql'])) {
-                $concat_string .= '(' . $this->mask_field_array[$index]['sql'] . ')';
+                $concat_string .= $this->mask_field_array[$index]['sql'];
             }else{
                 $concat_string .= $chunk;
             }
-            $comma_string = ', ';
+            $comma_string = ', ' . $crlf . $tab;
         }
-        $concat_string .= ')';
-        $mask_sql_smarty = 'SELECT ' . $concat_string . ' FROM ' . $mask_base_table . ' ' . $mask_base_alias . ' WHERE ' . $mask_base_alias . '.' . $mask_base_primary . ' = ' . $mask_base_smarty;
+        $concat_string .= $crlf . $tab . ')' . $crlf . $tab;
+        $mask_sql_smarty = 'SELECT ' . $crlf . $tab . $concat_string . $space . $crlf . 'FROM ' . $mask_base_table . ' ' . $mask_base_alias . $space . $crlf . 'WHERE ' . $mask_base_alias . '.' . $mask_base_primary . ' = ' . $mask_base_smarty;
 
 
         $this->mask_sql_smarty = $mask_sql_smarty;
@@ -271,7 +255,9 @@ class ael_backlog_object
         /**
          * @todo determine whether part of base entity table or bundle field
          */
-
+        $crlf = $this->crlf;
+        $tab = $this->tab;
+        $space = $this->space;
         $target_type = $config['reference_array'][0]['data']['target_type'];
         $target_entity = $this->entity_array[$target_type];
         $from_bundle = $config['reference_array'][0]['data']['from_bundle'] + 0;
@@ -294,13 +280,12 @@ class ael_backlog_object
         $base_entity = $this->entity_array[$config['entity']];
         $base_smarty = '{' . $base_entity['alias'] . '.' . $base_entity['primary'] . '}';
         $outer_entity_id_smarty = $outer_alias . '.' . $outer_primary;
-        $target_entity_id_sql = "SELECT {$target_alias}.{$target_field_name}
-                    FROM {$target_table_name} {$target_alias}
-                    WHERE {$target_alias}.entity_id = {$base_smarty}";
-        $outer_field_sql = "SELECT {$outer_alias}.{$outer_field_name}
-                            FROM {$outer_table_name} {$outer_alias}
-                            WHERE {$outer_alias}.{$outer_primary} = ({inner_sql})";
+        $target_entity_id_sql = "{$crlf}{$tab}SELECT {$target_alias}.{$target_field_name}{$crlf}{$tab}FROM {$target_table_name} {$target_alias}{$crlf}{$tab}WHERE {$target_alias}.entity_id = {$base_smarty}{$crlf}{$tab}";
+        $outer_field_sql = "{$crlf}{$tab}SELECT {$outer_alias}.{$outer_field_name}{$crlf}{$tab}FROM {$outer_table_name} {$outer_alias} {$crlf}{$tab}WHERE {$outer_alias}.{$outer_primary} = ({inner_sql})";
+        $target_entity_id_sql = $this->utility_ztring_replace($target_entity_id_sql, 3);
         $field_sql = str_replace('{inner_sql}', $target_entity_id_sql, $outer_field_sql);
+        $field_sql = $this->utility_ztring_replace($field_sql, 2);
+        $field_sql = '(' . $field_sql . $crlf . $tab . ')';
         return $field_sql;
     }
 
@@ -343,17 +328,59 @@ class ael_backlog_object
 
     public function unpack_update_sql_smarty()
     {
+        $crlf = $this->crlf;
+        $tab = $this->tab;
+        $space = $this->space;
         $ael_this = 'SET @ael_this = (' . $this->mask_sql_smarty . ');';
         $entity = $this->entity_array[$this->entity];
         $table = $entity['table'];
         $primary = $entity['primary'];
         $primary_smarty = '{' . $entity['alias'] . '.' . $primary . '}';
         $alias = $entity['alias'] . $entity['alias'];
-        $update_sql_smarty = 'UPDATE ' . $table . ' ' . $alias . ' SET ' . $alias . '.title = (' . '@ael_this' . ') WHERE ' . $alias . '.' . $primary . ' = ' . $primary_smarty . ';';
-        $this->update_sql_smarty = $ael_this . $this->space . $this->crlf . $update_sql_smarty;
-    }
+        $ael_this = $this->utility_ztring_replace($ael_this);
+        switch ($this->command) {
+            case 'compose':
+                $update_sql_smarty = 'UPDATE ' . $table . ' ' . $alias . ' SET ' . $alias . '.title = (' . '@ael_this' . ') WHERE ' . $alias . '.' . $primary . ' = ' . $primary_smarty . ';';
+                $update_sql_smarty = $ael_this . $space . $crlf . $update_sql_smarty;
+                $update_sql_smarty = $this->utility_ztring_replace($update_sql_smarty);
+                break;
+            case 'preview':
+                $update_sql_smarty = 'SELECT ' . '@ael_this' . ';';
+                $update_sql_smarty = $ael_this . $space . $crlf . $update_sql_smarty;
+                $update_sql_smarty = $this->utility_ztring_replace($update_sql_smarty);
+                break;
 
+            default:
+                #\_ default is 'mask' since upack_command already validated
+                $update_sql_smarty = $ael_this;
+                break;
+        }
+        $this->update_sql_smarty = $update_sql_smarty;
+    }
+    public function utility_ztring_replace($string, $tab_level = 1) {
+        /**
+         * Method instead of Function so that $attributes can be consistent
+         * Could make replacement string $attributes, but makes sense to make them local here
+         */
+        $crlf_z = $this->crlf;
+        $tab_z = $this->tab;
+        $space_z = $this->space;
+        $crlf = "\r\n";
+        $tab_level = $tab_level + 0;
+        $i = 0;
+        $tab = '';
+        while ($i < $tab_level) {
+            $tab .= "    ";
+            $i++;
+        }
+        $space = " ";
+        $string = str_replace($crlf_z, $crlf, $string);
+        $string = str_replace($tab_z, $tab, $string);
+        $string = str_replace($space_z, $space, $string);
+        return $string;
+    }
     public function dev_method($options = NULL) {
+        return; //test before deleting
         $field_name = 'field_player';
         // $this->temp_ouput = $field_name;
 
@@ -462,7 +489,7 @@ class ael_backlog_object
         );
         if (count($attribute_array) > 0) {
             foreach ($attribute_array as $index => $attribute) {
-                $this->output_string .= "\r\n" . $attribute . ":\r\n    " . print_r($this->$attribute, TRUE);
+                $this->output_string .= "\r\n=====\r\n" . $attribute . ":\r\n" . print_r($this->$attribute, TRUE);
             } //END foreach()
         }else{
             $this->output_string .= "\r\n" . print_r($this, TRUE);
