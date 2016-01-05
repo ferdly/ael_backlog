@@ -7,7 +7,7 @@ class ael_backlog_object
     var $entity;
     var $limit;
     var $feedback;
-    var $entity_array = array();
+    var $entity_id_array = array();
     var $ael_config; //= array();
     var $ael_config_pattern; //= array();
     var $ael_config_php; //= array();
@@ -78,10 +78,14 @@ class ael_backlog_object
         if ($this->output_message_type != 'success') {
             return;
         }
-        // $this->dev_method();
-        // if ($this->output_message_type != 'success') {
-        //     return;
-        // }
+        $this->unpack_entity_id_array();
+        if ($this->output_message_type != 'success') {
+            return;
+        }
+        $this->unpack_update_sql_rendered();
+        if ($this->output_message_type != 'success') {
+            return;
+        }
         $this->gather_output();
         return;
     }
@@ -379,79 +383,47 @@ class ael_backlog_object
         $string = str_replace($space_z, $space, $string);
         return $string;
     }
-    public function dev_method($options = NULL) {
-        return; //test before deleting
-        $field_name = 'field_player';
-        // $this->temp_ouput = $field_name;
-
+    public function unpack_entity_id_array() {
+        if ($this->command == 'mask') {
+            return;
+        }
+        $entity_id_array = array(68,70);
         /**
-         * @comment in db for table field_config for column field_name: 'The name of this field. Non-deleted field names are unique, but multiple deleted fields can have the same name.'
+         * @todo evaluate limit, list, rand, (other options)
          */
-        $config =
-            db_query('SELECT
-                id
-                , field_name
-                , type
-                , module
-                , active
-                , storage_type
-                , storage_module
-                , storage_active
-                , locked
-                , data
-                , cardinality
-                , translatable
-                , deleted
-                FROM {field_config}
-                WHERE field_name = :field_name AND deleted = :deleted',
-                array(':field_name' => $field_name, ':deleted'=> 0))->fetchAssoc();
-        $config_data = unserialize($config['data']);
-        $config['data'] = $config_data;
-        $this->temp_ouput = $config;
-        if ($config['type'] != 'entityreference') {
-                $this->output_message = '"field_config[type]" is NOT \'entityreference\'';
-                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+        $this->entity_id_array = $entity_id_array;
+    }
+    public function unpack_update_sql_rendered() {
+        #\_ well, render
+        if ($this->command == 'mask') {
+            $this->update_sql_rendered = $this->update_sql_smarty;
+            return;
         }
-        elseif ($config['module'] != 'entityreference') {
-                $this->output_message = '"field_config[module]" is NOT \'entityreference\'';
-                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+        $entity = $this->entity_array[$this->entity];
+        $smarty_search = '{' . $entity['alias'] . '.' . $entity['primary'] . '}';
+        $update_sql_smarty = $this->update_sql_smarty;
+        $update_sql_rendered = '';
+        foreach ($this->entity_id_array as $index => $entity_id) {
+            $singleton = str_replace($smarty_search, $entity_id, $update_sql_smarty) . "\r\n";
+            $update_sql_rendered .= $singleton;
         }
-        elseif ($config['storage_type'] != 'field_sql_storage') {
-                $this->output_message = '"field_config[storage_type]" is NOT \'field_sql_storage\'';
-                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
-        }
-        elseif ($config['storage_module'] != 'field_sql_storage') {
-                $this->output_message = '"field_config[storage_module]" is NOT \'field_sql_storage\'';
-                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
-        }
-        elseif ($config['storage_active'] != 1) {
-                $this->output_message = '"field_config[storage_active]" is NOT \'1\'';
-                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
-        }
-        elseif ($config['active'] != 1) {
-                $this->output_message = '"field_config[active]" is NOT \'1\'';
-                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
-        }
-        elseif ($config['cardinality'] != 1) {
-                $this->output_message = '"field_config[cardinality]" is NOT \'1\'. Cardinality greater than 1 is not supported at this time.';
-                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
-        }
-        elseif ($config['deleted'] != 0) {
-                $this->output_message = '"field_config[deleted]" is NOT \'0\'';
-                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
-        }
+        $this->update_sql_rendered = $update_sql_rendered;
+        return;
     }
     public function gather_output ()
     {
-        //skeleton
+        $attribute_array = array();
         switch ($this->command) {
             case 'compose':
+                $attribute_array[] = 'update_sql_rendered';
                 $this->output_message = 'Okay, I will compose the SQL';
                 break;
             case 'preview':
+                $attribute_array[] = 'update_sql_rendered';
                 $this->output_message = 'Okay, I will compose a preview of the SQL and some results';
                 break;
             case 'mask':
+                $attribute_array[] = 'update_sql_rendered';
                 $this->output_message = 'Okay, I will compose the mask SQL and generate and example';
                 break;
 
@@ -459,6 +431,18 @@ class ael_backlog_object
                 $this->output_message = 'The "' . $command . '" command is not supported, something went very wrong. Please asks for assistance.';
                 $this->output_message_type = 'OOAOC should be caught before output.';
                 break;
+        }
+        $attribute_title_array = array();
+        $att_count = count($attribute_array);
+        if ($att_count > 0) {
+            $this->output_string = "=====================================";
+            $pre_block = $att_count > 0?"\r\n=====\r\n":'';
+            $attribute_title = empty($attribute_title_array[$attribute])?$attribute:$attribute_title_array[$attribute];
+            foreach ($attribute_array as $index => $attribute) {
+                $this->output_string .= "\r\n=====\r\n" . $attribute . ":\r\n" . print_r($this->$attribute, TRUE);
+            } //END foreach()
+            $this->output_string .= "\r\n=====================================\r\n";
+            return;
         }
         $this->output_string = "=====================================";
         $attribute_array = array(
