@@ -25,6 +25,9 @@ class ael_backlog_object
     var $output_message_type = 'success';//assume the best
     var $stack = array();
     var $stack_type = array();
+    var $crlf = "\r\n";
+    var $tab = "    ";
+    var $space = " ";
     var $temp_ouput;
 
     public function  __construct($command, $bundle, $entity)
@@ -67,7 +70,11 @@ class ael_backlog_object
         if ($this->output_message_type != 'success') {
             return;
         }
-        $this->unpack_mask_bundles();
+        $this->unpack_mask_fields();
+        if ($this->output_message_type != 'success') {
+            return;
+        }
+        $this->unpack_update_sql_smarty();
         if ($this->output_message_type != 'success') {
             return;
         }
@@ -195,7 +202,7 @@ class ael_backlog_object
     public function unpack_mask_config () {
         $config_array = $this->mask_config_array;
         foreach ($config_array as $index => $string) {
-            $config_singleton = unpack_mask_config_singleton($string);
+            $config_singleton = unpack_mask_config_singleton($string, $index);
             unset($this->mask_config_array[$index]);
             $this->mask_config_array[$index] = $config_singleton;
         }
@@ -203,16 +210,147 @@ class ael_backlog_object
 
 
 
-    public function unpack_mask_bundles (){
+    public function unpack_mask_fields ()
+    {
         /**
          * @circleback - all steps regarding php are left for later
          */
+        $mask_base_table = $this->entity_array[$this->entity]['table'];
+        $mask_base_alias = $this->entity_array[$this->entity]['alias'];
+        $mask_base_primary = $this->entity_array[$this->entity]['primary'];
+        $mask_base_smarty = '{' . $mask_base_alias . '.' . $mask_base_primary . '}';
         $field_array = $this->mask_field_array;
         $i = 0;
         foreach ($field_array as $index => $chunk) {
-            $i++;
+            $config = $this->mask_config_array[$index];
+
+            if (count($config[reference_array]) == 0) {
+                $chunk_sql = $this->unpack_mask_field_direct ($config);
+            }elseif(count($config[reference_array]) == 1)
+            {
+                $chunk_sql = $this->unpack_mask_field_reference ($config);
+            }else
+            {
+                $chunk_sql = 'EERROR';
+                $this->output_message = "\"$command\" is NOT a supported command.";
+                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+            }
+            unset($this->mask_field_array[$index]);
+            $this->mask_field_array[$index]['string'] = $chunk;
+            $this->mask_field_array[$index]['sql'] = $chunk_sql;
         }
+        $mask_sql_smarty = '';
+        $concat_string = 'CONCAT( ';
+        $comma_string = '';
+        foreach ($this->mask as $index => $chunk) {
+            $concat_string .= $comma_string;
+           if (!empty($this->mask_field_array[$index]['sql'])) {
+                $concat_string .= '(' . $this->mask_field_array[$index]['sql'] . ')';
+            }else{
+                $concat_string .= $chunk;
+            }
+            $comma_string = ', ';
+        }
+        $concat_string .= ')';
+        $mask_sql_smarty = 'SELECT ' . $concat_string . ' FROM ' . $mask_base_table . ' ' . $mask_base_alias . ' WHERE ' . $mask_base_alias . '.' . $mask_base_primary . ' = ' . $mask_base_smarty;
+
+
+        $this->mask_sql_smarty = $mask_sql_smarty;
        return;
+    }
+
+    public function unpack_mask_field_direct ($config)
+    {
+        $entity = $this->entity_array[$config['entity']];
+        $field_sql = $entity['alias'] . '.' . $config['field'];
+        return $field_sql;
+    }
+
+    public function unpack_mask_field_reference ($config)
+    {
+        /**
+         * @todo determine whether part of base entity table or bundle field
+         */
+
+        $target_type = $config['reference_array'][0]['data']['target_type'];
+        $target_entity = $this->entity_array[$target_type];
+        $from_bundle = $config['reference_array'][0]['data']['from_bundle'] + 0;
+        if ($from_bundle == 1) {
+            $field = $config['field'];
+            $outer_alias = implode(array_map('upmfr_left_init', explode('_', $field)));
+            $outer_table_name = 'field_data_' . $field;
+            $outer_field_name = $field . '_value';
+            $outer_primary = 'entity_id';
+        }else{
+            $outer_alias = $target_entity['alias'];
+            $outer_table_name = $target_entity['table'];
+            $outer_field_name = $config['field'];
+            $outer_primary = $target_entity['primary'];
+        }
+        $target_table_name = $config['reference_array'][0]['data']['target_table_name'];
+        $target_field_name = $config['reference_array'][0]['data']['target_field_name'];
+        $entity = $this->entity_array[$config['entity']];
+        $target_alias = $config['reference_array'][0]['alias'];
+        $base_entity = $this->entity_array[$config['entity']];
+        $base_smarty = '{' . $base_entity['alias'] . '.' . $base_entity['primary'] . '}';
+        $outer_entity_id_smarty = $outer_alias . '.' . $outer_primary;
+        $target_entity_id_sql = "SELECT {$target_alias}.{$target_field_name}
+                    FROM {$target_table_name} {$target_alias}
+                    WHERE {$target_alias}.entity_id = {$base_smarty}";
+        $outer_field_sql = "SELECT {$outer_alias}.{$outer_field_name}
+                            FROM {$outer_table_name} {$outer_alias}
+                            WHERE {$outer_alias}.{$outer_primary} = ({inner_sql})";
+        $field_sql = str_replace('{inner_sql}', $target_entity_id_sql, $outer_field_sql);
+        return $field_sql;
+    }
+
+    public function unpack_mask_joins ()
+    {
+        /**
+         * @todo build joins rewrite smarty as:
+         *
+ UPDATE node n
+ SET n.title = (
+   SELECT
+   CONCAT('Week ', w.field_nfl_sequence_value, ' Standing for ', p.name, ' (', n.nid, ')')
+   FROM node_revision nr
+   LEFT JOIN (
+     SELECT
+     wd.entity_id
+     , wd.field_week_target_id
+     , wt.field_nfl_sequence_value
+     FROM field_data_field_week wd
+     LEFT JOIN field_data_field_nfl_sequence wt
+     ON wd.field_week_target_id = wt.entity_id
+   ) w
+   ON w.entity_id = nr.nid
+   LEFT JOIN (
+     SELECT
+     pd.entity_id
+     , pd.field_player_target_id
+     , pt.name
+     FROM field_data_field_player pd
+     LEFT JOIN users pt
+     ON pd.field_player_target_id = pt.uid
+   ) p
+   ON p.entity_id = nr.nid
+   WHERE nr.nid IN (58)
+ )
+ WHERE n.nid IN (58)
+ ;
+         */
+    }
+
+    public function unpack_update_sql_smarty()
+    {
+        $ael_this = 'SET @ael_this = (' . $this->mask_sql_smarty . ');';
+        $entity = $this->entity_array[$this->entity];
+        $table = $entity['table'];
+        $primary = $entity['primary'];
+        $primary_smarty = '{' . $entity['alias'] . '.' . $primary . '}';
+        $alias = $entity['alias'] . $entity['alias'];
+        $update_sql_smarty = 'UPDATE ' . $table . ' ' . $alias . ' SET ' . $alias . '.title = (' . '@ael_this' . ') WHERE ' . $alias . '.' . $primary . ' = ' . $primary_smarty . ';';
+        $this->update_sql_smarty = $ael_this . $this->space . $this->crlf . $update_sql_smarty;
     }
 
     public function dev_method($options = NULL) {
@@ -297,23 +435,23 @@ class ael_backlog_object
         }
         $this->output_string = "=====================================";
         $attribute_array = array(
-         'command',
-        'bundle',
+         // 'command',
+        // 'bundle',
         'entity',
         // 'limit',
         // 'feedback',
-        'entity_array',
+        // 'entity_array',
         // 'ael_config',
         // 'ael_config_pattern',
         // 'ael_config_php',
         // 'nid_array',
-        'mask',
+        // 'mask',
         'mask_config_array',
         // 'mask_field_array',
-        // 'mask_join_array',
-        // 'mask_sql_smarty',
+        'mask_join_array',
+        'mask_sql_smarty',
         // 'mask_rendered',
-        // 'update_sql_smarty',
+        'update_sql_smarty',
         // 'update_sql_rendered',
         // 'output_string',
         'output_message',
@@ -337,16 +475,17 @@ class ael_backlog_object
 } //END Class ael_backlog_object
 
 
-    function unpack_mask_config_singleton($string) {
+    function unpack_mask_config_singleton($string, $index) {
         $return_array = array();
+        $return_array['index'] = $index;
         $return_array['string'] = $string;
         $string = str_replace('[', '', str_replace(']', '', $string));
         $string_array = explode(':', $string);
         $base_entity = array_shift($string_array);
         $field = array_pop($string_array);
         $i = 0;
-        foreach ($string_array as $index => $reference) {
-            $reference_array[$i] = unpack_reference_singleton($reference);
+        foreach ($string_array as $ref_index => $reference) {
+            $reference_array[$i] = unpack_reference_singleton($reference, $index, $ref_index);
             $i++;
         }
         $field_table = 'field_data_' . $field;
@@ -359,9 +498,10 @@ class ael_backlog_object
         return $return_array;
     }
 
-    function unpack_reference_singleton($reference)
+    function unpack_reference_singleton($reference, $index, $ref_index)
     {
         $reference_array = array();
+        $reference_array['alias'] = 'r' .  $index . '_' . $ref_index;
         $reference_array['string'] = $reference;
         $field_name = str_replace('-', '_', $reference);
         $reference_array['field_name'] = $field_name;
@@ -388,6 +528,7 @@ class ael_backlog_object
                 array(':field_name' => $field_name, ':deleted'=> 0))->fetchAssoc();
         $config_data = unserialize($config['data']);
         $config_data_limited_array['target_type'] = $config_data['settings']['target_type'];
+        $config_data_limited_array['from_bundle'] = count(@$config_data['settings']['handler_settings']['target_bundles']) > 0?1:0;
         $limited_table = key($config_data['storage']['details']['sql']['FIELD_LOAD_CURRENT']);
         $limited_field = $config_data['storage']['details']['sql']['FIELD_LOAD_CURRENT'][$limited_table]['target_id'];
         $config_data_limited_array['target_table_name'] = $limited_table;
@@ -487,3 +628,5 @@ class ael_backlog_object
         }
         return $entity_array;
     }
+
+    function upmfr_left_init($value) {return substr($value, 0, 1);}
