@@ -2,10 +2,12 @@
 
 class ael_backlog_object
 {
-    var $command;
+    var $action;
     var $bundle;
     var $entity;
+    var $option_array = array();
     var $limit;
+    var $limit_idlist;
     var $feedback;
     var $entity_array = array();
     var $bundle_array = array();
@@ -32,84 +34,113 @@ class ael_backlog_object
     var $space = "zSPACEz";
     var $temp_ouput;
 
-    public function  __construct($command = 'compose', $bundle, $additional_option_array = array())
+    public function  __construct($bundle, $action, $additional_option_array)
     {
-        $this->command = $command;
+        //__construct($action = 'compose', $bundle, $additional_option_array = array())
+        $this->action = $action;
         $this->bundle = $bundle;
-        // $this->entity = $entity;
-        // $this->limit = $limit;
-        // $this->feedback = $feedback;
+        $this->option_array = $additional_option_array;
     }
 
     public function unpack()
     {
 
-        $this->unpack_command();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        $this->unpack_action();
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
+            return;
+        }
+        $this->unpack_options();
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->unpack_all_entities_method();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->unpack_bundle();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->unpack_ael_config();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->unpack_mask_pattern();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->unpack_mask_php();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->unpack_mask_config();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->unpack_mask_fields();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->unpack_update_sql_smarty();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->unpack_entity_id_array();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
+            return;
+        }
+        $this->validate_options();
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->unpack_update_sql_rendered();
-        if (1 == 2 && $this->output_message_type != 'success') {
+        if (1 == 1 && $this->output_message_type != 'success') {
+            $this->gather_output();
             return;
         }
         $this->gather_output();
         return;
     }
 
-    public function unpack_command()
+    public function unpack_action()
     {
-        $command = $this->command;
-        $this->bundle = $command;
-        $command = 'compose';
-        $this->command = $command;
-        /**
-         * @circleback get command dynamically
-         *
-         * @var        array
-         */
+        $action = $this->action;
+        if (empty($action)) {
+            $action = 'compose';
+        }
         $supported = array('compose', 'preview', 'mask');
-        if (!in_array($command, $supported)) {
-            $this->supported_command_array = $supported; // dynamic overload for print_r() purposes
-            $this->output_message = "\"$command\" is NOT a supported command.";
+        if (!in_array($action, $supported)) {
+            $this->supported_action_array = $supported; // dynamic overload for print_r() purposes
+            $this->output_message = "\"$action\" is NOT a supported action.";
             $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
         }
-        return;//no change to $command
+        $this->action = $action;
+        return;//no change to $action
+    }
+    public function unpack_options()
+    {
+        $action = $this->action;
+        $option_array = $this->option_array;
+        $limit = empty($option_array['limit'])?0:$option_array['limit'];
+        $limit_idlist = empty($option_array['limit_idlist'])?'':$option_array['limit_idlist'];
+        /**
+         * @todo overload options based on $action
+         */
+        $this->limit = $limit;
+        $this->limit_idlist = $limit_idlist;
+
     }
 
     public function unpack_all_entities_method()
@@ -137,7 +168,7 @@ class ael_backlog_object
             $this->output_message = "\"{$this->bundle}\" is NOT a supported bundle.";
             $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
         }
-        return;//no change to $command
+        return;//no change to $action
 
     }
 
@@ -238,7 +269,7 @@ class ael_backlog_object
             }else
             {
                 $chunk_sql = 'EERROR';
-                $this->output_message = "\"$command\" is NOT a supported command.";
+                $this->output_message = "\"$action\" is NOT a supported action.";
                 $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
             }
             unset($this->mask_field_array[$index]);
@@ -360,7 +391,7 @@ class ael_backlog_object
         $primary_smarty = '{' . $entity['alias'] . '.' . $primary . '}';
         $alias = $entity['alias'] . $entity['alias'];
         $ael_this = $this->utility_ztring_replace($ael_this);
-        switch ($this->command) {
+        switch ($this->action) {
             case 'compose':
                 $update_sql_smarty = 'UPDATE ' . $table . ' ' . $alias . ' SET ' . $alias . '.title = (' . '@ael_this' . ') WHERE ' . $alias . '.' . $primary . ' = ' . $primary_smarty . ';';
                 $update_sql_smarty = $ael_this . $space . $crlf . $update_sql_smarty;
@@ -373,7 +404,7 @@ class ael_backlog_object
                 break;
 
             default:
-                #\_ default is 'mask' since upack_command already validated
+                #\_ default is 'mask' since upack_action already validated
                 $update_sql_smarty = $ael_this;
                 break;
         }
@@ -401,8 +432,10 @@ class ael_backlog_object
         $string = str_replace($space_z, $space, $string);
         return $string;
     }
-    public function unpack_entity_id_array() {
-        if ($this->command == 'mask') {
+
+    public function unpack_entity_id_array()
+    {
+        if ($this->action == 'mask') {
             return;
         }
         $entity_id_array = array(68,70);
@@ -411,9 +444,28 @@ class ael_backlog_object
          */
         $this->entity_id_array = $entity_id_array;
     }
-    public function unpack_update_sql_rendered() {
+
+
+    public function validate_options()
+    {
+        if ($this->action == 'mask') {
+            return;
+        }
+        if ($this->limit == 0 && $this->action == 'preview') {
+            $this->limit = 1;
+        }
+        /**
+         * @todo evaluate limit, limit_idlist, rand (of limit), (other options)
+         * if preview && limit = 0 then 1
+         * @todo deal with adding rand to option_array
+         */
+        return;
+    }
+
+    public function unpack_update_sql_rendered()
+    {
         #\_ well, render
-        if ($this->command == 'mask') {
+        if ($this->action == 'mask') {
             $this->update_sql_rendered = $this->update_sql_smarty;
             return;
         }
@@ -437,25 +489,25 @@ class ael_backlog_object
         $leading_output_string = "=====================================";
         $trailing_output_string = "\r\n=====================================";
         #\_ overload either above below
-        switch ($this->command) {
+        switch ($this->action) {
             case 'compose':
                 $leading_output_string = '/*======= SQL Code Block Start ========*/';
                 $trailing_output_string = $crlf . '/*======== SQL Code Block End =========*/';
-                $attribute_array[] = 'update_sql_rendered';
+                // $attribute_array[] = 'update_sql_rendered';
                 $this->output_message = 'Okay, I will compose the SQL';
                 break;
             case 'preview':
-                $attribute_array[] = 'update_sql_rendered';
+                // $attribute_array[] = 'update_sql_rendered';
                 $this->output_message = 'Okay, I will compose a preview of the SQL and some results';
                 break;
             case 'mask':
-                $attribute_array[] = 'update_sql_rendered';
+                // $attribute_array[] = 'update_sql_rendered';
                 $this->output_message = 'Okay, I will compose the mask SQL and generate and example';
                 break;
 
             default:
-                $this->output_message = 'The "' . $command . '" command is not supported, something went very wrong. Please asks for assistance.';
-                $this->output_message_type = 'OOAOC should be caught before output.';
+                // $this->output_message = 'The "' . $action . '" action is not supported, something went very wrong. Please asks for assistance.';
+                // $this->output_message_type = 'OOAOC should be caught before output.';
                 break;
         }
         $attribute_title_array = array();
@@ -472,25 +524,17 @@ class ael_backlog_object
             $this->output_string .= $trailing_output_string;
             return;
         }
-        $entity_bundle_array = field_info_bundles();
-        $i = 1;
-        foreach ($entity_bundle_array as $entity => $bundle_array) {
-            foreach ($bundle_array as $bundle => $value_array) {
-                // $this->temp_ouput[$entity][$bundle] = $i;
-                $this->temp_ouput[] = $bundle;
-                $i++;
-            }
-        }
-        // $this->temp_ouput = array_keys(field_info_bundles());
         $this->output_string = "=====================================";
         $attribute_array = array(
-         'command',
+         'action',
         'bundle',
         'entity',
-        // 'limit',
+        'option_array',
+        'limit',
+        'limit_idlist',
         // 'feedback',
-        'entity_id_array',
-        'entity_array',
+        // 'entity_id_array',
+        // 'entity_array',
         'bundle_array',
         // 'ael_config',
         // 'ael_config_pattern',

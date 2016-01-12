@@ -9,7 +9,7 @@ function ael_backlog_drush_command() {
     'description' => 'Demonstrate how AEL Backlog command works.',
     'aliases' => array('label'), //anagram of AEL BL
     'arguments' => array(
-      'command' => 'The type of statement (compose or preview).',
+      'action' => 'The type of statement (compose or preview).',
     ),
     'options' => array(
       'limit' => 'The number of items to execute for the command (smart defaults as per action, and validated).',
@@ -29,12 +29,12 @@ function ael_backlog_drush_command() {
 /**
  * Callback for the drush-demo-command command
  */
-function drush_ael_backlog_command($command = FALSE) {
+function drush_ael_backlog_command($bundle = FALSE) {
 
   // Check for existence of argument
     $options = _bundle_options();
-    if (!$command) {
-        $command = drush_choice($options, dt('For which Bundle would you like to generate \'Auto Enity-Label Back-Log\' SQL Code?'));
+    if (!$bundle) {
+        $bundle = drush_choice($options, dt('For which Bundle would you like to generate \'Auto Enity-Label Back-Log\' SQL Code?'));
     }
 
   // Check for correct argument
@@ -54,11 +54,11 @@ function drush_ael_backlog_command($command = FALSE) {
   if ($correct_args_count == 0) {
     $string = $zero;
   }else{
-    $string = $non_zero . $grammar . $list . '. (Or supply no bundle and select from promted values.)';
+    $string = $non_zero . $grammar . $list . '. (Or supply no bundle and select from prompted values.)';
   }
-  if (!in_array($command, $correct_args)) {
-    // return drush_set_error(dt('"@type" is not a valid code type. Please choose between "success" and "error".', array('@type' => $command)));
-    return drush_set_error(dt('"@type" is not a valid bundle (content type). @string', array('@type' => $command,'@string' => $string)));
+  if (!in_array($bundle, $correct_args)) {
+    // return drush_set_error(dt('"@type" is not a valid code type. Please choose between "success" and "error".', array('@type' => $bundle)));
+    return drush_set_error(dt('"@type" is not a valid bundle (content type). @string', array('@type' => $bundle,'@string' => $string)));
   }
 
   // Option
@@ -66,6 +66,7 @@ function drush_ael_backlog_command($command = FALSE) {
   /**
    * @circleback can this be gathered from ael_backlog_drush_command()
    */
+  // $bundle = $bundle;//KLUDGE
   $supported_option_array = array(
     'action',
     'limit',
@@ -74,7 +75,14 @@ function drush_ael_backlog_command($command = FALSE) {
   foreach ($supported_option_array as $index => $option) {
     $option = strtolower($option);//maybe enforce case sensitivity
     $$option = drush_get_option($option, NULL);
+    $key = str_replace('-', '_', $option);
+    $additional_option_array[$key] = $$option;
   }
+  /**
+   * @todo validate, unpack here? I think in object method
+   */
+  _drush_execute_command($bundle, $action, $additional_option_array);
+  // _drush_execute_command($bundle, $action);
 }
 
 function _bundle_options(){

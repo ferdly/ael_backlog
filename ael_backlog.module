@@ -4,11 +4,15 @@
  * Example function.
  */
 
-function _drush_execute_command($command = NULL, $bundle = NULL, $additional_option_array = array()) {
+function _drush_execute_command($bundle = NULL, $action = NULL, $additional_option_array = array()) {
+    //_drush_execute_command($bundle = NULL, $action = NULL, $additional_option_array = array())
     //$limit as zero means all
     require_once 'src/ael_backlog_object.php';
-    $label = new ael_backlog_object($command, $bundle, $additional_option_array);
+    // $label = new ael_backlog_object($command, $bundle, $additional_option_array);
+    $label = new ael_backlog_object($bundle, $action, $additional_option_array);
     // $label = new ael_backlog_object($bundle, $command, $additional_option_array);
+    // $label->bundle = 'Z' . $bundle;
+    // $label->action = 'Z' . $action;
     $label->unpack();
     // switch instead of if-else to make more extensible
     switch ($label->output_message_type) {
@@ -29,7 +33,6 @@ function _drush_execute_command($command = NULL, $bundle = NULL, $additional_opt
             $message = $label->output_message;
             break;
     }
-    $message .= " [$limit]";
   drupal_set_message(t($message), $type);
   drupal_set_message(t("[message set {$type_debug_string}]"), $type);
   $test_output_array = array(
