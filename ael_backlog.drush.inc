@@ -14,7 +14,7 @@ function ael_backlog_drush_command() {
     'options' => array(
       'limit' => 'The number of items to execute for the command (smart defaults as per action, and validated).',
       'limit-idlist' => 'A Comma Separated Value (csv) list of entity_id values to execute for the command (validated).',
-      'action' => 'compose, preview, or mask with compose being the default. This will affect the default of limit.',
+      'rand' => 'In conjunction with limit only (at this time). Validated.', 'action' => 'compose, preview, or mask with compose being the default. This will affect the default of limit.',
     ),
     'examples' => array(
       'drush label --action=mask' => 'PENDING Prints the statement once with the error flag.',
@@ -71,6 +71,7 @@ function drush_ael_backlog_command($bundle = FALSE) {
     'action',
     'limit',
     'limit-idlist',
+    'rand',
     );
   foreach ($supported_option_array as $index => $option) {
     $option = strtolower($option);//maybe enforce case sensitivity

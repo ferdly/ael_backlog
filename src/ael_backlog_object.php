@@ -8,6 +8,7 @@ class ael_backlog_object
     var $option_array = array();
     var $limit;
     var $limit_idlist;
+    var $rand = false;
     var $feedback;
     var $entity_array = array();
     var $bundle_array = array();
@@ -45,69 +46,70 @@ class ael_backlog_object
     public function unpack()
     {
 
+        $dev = TRUE;
         $this->unpack_action();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_options();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_all_entities_method();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_bundle();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_ael_config();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_mask_pattern();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_mask_php();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_mask_config();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_mask_fields();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_update_sql_smarty();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_entity_id_array();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->validate_options();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->unpack_update_sql_rendered();
         if (1 == 1 && $this->output_message_type != 'success') {
-            $this->gather_output();
+            $this->gather_output($dev);
             return;
         }
         $this->gather_output();
@@ -133,13 +135,27 @@ class ael_backlog_object
     {
         $action = $this->action;
         $option_array = $this->option_array;
+
         $limit = empty($option_array['limit'])?0:$option_array['limit'];
+
         $limit_idlist = empty($option_array['limit_idlist'])?'':$option_array['limit_idlist'];
-        /**
-         * @todo overload options based on $action
-         */
+        $limit_idlist = str_replace(' ', '', $limit_idlist);
+        $limit_idlist = str_replace('"', '', $limit_idlist);
+        $limit_idlist = str_replace("'", '', $limit_idlist);
+        $limit_idlist_array = explode(',', $limit_idlist);
+        if (count($limit_idlist_array) == 1 && empty($limit_idlist[0])) {
+            $limit_idlist_array = array();
+        }
+
+        $rand = $option_array['rand'] === 'rand'?true:false;
+        $rand = $option_array['rand'] === 'true'?true:$rand;
+        $rand = $option_array['rand'] === '1'?true:$rand;
+        // $rand = $rand === true?'TTRUE':'FFALSE';
+
+
         $this->limit = $limit;
-        $this->limit_idlist = $limit_idlist;
+        $this->limit_idlist = $limit_idlist_array;
+        $this->rand = $rand;
 
     }
 
@@ -438,7 +454,7 @@ class ael_backlog_object
         if ($this->action == 'mask') {
             return;
         }
-        $entity_id_array = array(68,70);
+        $entity_id_array = array(58,59,60,61,62,63,64,65,66,67,68,69,70);
         /**
          * @todo evaluate limit, list, rand, (other options)
          */
@@ -451,13 +467,58 @@ class ael_backlog_object
         if ($this->action == 'mask') {
             return;
         }
+        $limit_passed = !isset($this->option_array['limit'])?'NNULL':$this->option_array['limit'];
+
         if ($this->limit == 0 && $this->action == 'preview') {
-            $this->limit = 1;
+            $this->limit = 1; //change default of preview
         }
+        if ($this->rand === TRUE) {
+            shuffle($this->entity_id_array);
+            #\_ this works with 0 (all), and limit (since limit 3 is first 3 shuffledm etc)
+        }
+        $limit_idlist = $this->limit_idlist;
+        if (count($limit_idlist) > 0 && $limit_passed !== 'NNULL') {
+            $this->output_message = "limit and limit_listid are in conflict.";
+            $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+            return;
+        }
+        $entity_id_array = $this->entity_id_array;
+        if (count($limit_idlist) > 0) {
+            if($this->rand === TRUE) {
+             shuffle($limit_idlist);
+             #\_ seems silly, but if one wants to have a semi-constant test idlist and randomize that, that makes sense
+            }
+            $id_of_list_error = FALSE;
+            foreach ($limit_idlist as $index => $entity_id ) {
+                if (!in_array($entity_id, $entity_id_array)) {
+                    $id_of_list_error = TRUE;
+                    break;
+                }
+            }
+            if ($id_of_list_error === FALSE) {
+                $this->entity_id_array = $limit_idlist;
+                return;
+            }else{
+                $this->output_message = "\"{$entity_id}\" is NOT a valid entity_id (first encountered).";
+                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+                return;
+            }
+        } //END limit_idlist
+        if ($this->limit > count($entity_id_array)) {
+                $this->output_message = "limit is NOT less than or equal to all entity ids.";
+                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+                return;
+        }
+        if ($this->limit > 0) {
+            $offset = -1 * $this->limit;
+            $this->entity_id_array = array_slice($entity_id_array, $offset);
+            #\_ since shuffle already randomized, taking from front or back of array doesn't matter
+        }
+
         /**
-         * @todo evaluate limit, limit_idlist, rand (of limit), (other options)
-         * if preview && limit = 0 then 1
-         * @todo deal with adding rand to option_array
+         * evaluates limit, limit_idlist and rand
+         * @todo evaluate other options?
+         * @todo fully test every permutation
          */
         return;
     }
@@ -480,7 +541,7 @@ class ael_backlog_object
         $this->update_sql_rendered = $update_sql_rendered;
         return;
     }
-    public function gather_output ()
+    public function gather_output ($dev = FALSE)
     {
         $crlf = "\r\n"; //$this->crlf; // use ztring_replace() method of this gets too hairy
         $tab = "    "; //$this->tab;
@@ -494,15 +555,21 @@ class ael_backlog_object
                 $leading_output_string = '/*======= SQL Code Block Start ========*/';
                 $trailing_output_string = $crlf . '/*======== SQL Code Block End =========*/';
                 // $attribute_array[] = 'update_sql_rendered';
-                $this->output_message = 'Okay, I will compose the SQL';
+                if ($dev === FALSE) {
+                    $this->output_message = 'Okay, I will compose the SQL';
+                }
                 break;
             case 'preview':
                 // $attribute_array[] = 'update_sql_rendered';
-                $this->output_message = 'Okay, I will compose a preview of the SQL and some results';
+                if ($dev === FALSE) {
+                    $this->output_message = 'Okay, I will compose a preview of the SQL and some results';
+                }
                 break;
             case 'mask':
                 // $attribute_array[] = 'update_sql_rendered';
-                $this->output_message = 'Okay, I will compose the mask SQL and generate and example';
+                if ($dev === FALSE) {
+                    $this->output_message = 'Okay, I will compose the mask SQL and generate and example';
+                }
                 break;
 
             default:
@@ -532,8 +599,9 @@ class ael_backlog_object
         'option_array',
         'limit',
         'limit_idlist',
+        'rand',
         // 'feedback',
-        // 'entity_id_array',
+        'entity_id_array',
         // 'entity_array',
         'bundle_array',
         // 'ael_config',
