@@ -12,11 +12,14 @@ function ael_backlog_drush_command() {
       'command' => 'The type of statement (compose or preview).',
     ),
     'options' => array(
-      'limit' => 'The number of items to execute for the command (smart defaults).',
+      'limit' => 'The number of items to execute for the command (smart defaults as per action, and validated).',
+      'limit-idlist' => 'A Comma Separated Value (csv) list of entity_id values to execute for the command (validated).',
+      'action' => 'compose, preview, or mask with compose being the default. This will affect the default of limit.',
     ),
     'examples' => array(
-      'drush ddc error' => 'Prints the statement once with the error flag.',
-      'drush ddc success --limit=10' => 'Prints the statement 10 times with the success flag.',
+      'drush label --action=mask' => 'PENDING Prints the statement once with the error flag.',
+      'drush ael_backlog --limit=10' => 'PENDING Prints the statement 10 times with the success flag.',
+      'drush label --limit-idlist=10,27,125' => 'PENDING Prints the statement 10 times with the success flag.',
     ),
   );
 
@@ -59,20 +62,19 @@ function drush_ael_backlog_command($command = FALSE) {
   }
 
   // Option
-  $limit = drush_get_option('repeat', 'EEMPTY');
-  if (strtolower($limit) == 'all') {
-        $limit = strtolower($limit);
-        _drush_execute_command($command, $limit);
+  // loop through array of supported options
+  /**
+   * @circleback can this be gathered from ael_backlog_drush_command()
+   */
+  $supported_option_array = array(
+    'action',
+    'limit',
+    'limit-idlist',
+    );
+  foreach ($supported_option_array as $index => $option) {
+    $option = strtolower($option);//maybe enforce case sensitivity
+    $$option = drush_get_option($option, NULL);
   }
-  elseif ($limit >= 0 && is_numeric($limit)) {
-        $limit = (int) floor($limit);
-        //FIND OUT WHAT migrate CALLS THE COUNT PRAMETER
-        _drush_execute_command($command, $limit);
-    }
-    else {
-        _drush_execute_command($command);
-    }
-
 }
 
 function _bundle_options(){

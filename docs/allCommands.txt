@@ -1,0 +1,80 @@
+All commands
+Below are All Commands for  Auto-Entity-Label Back-Log Module:
+==============================================================
+Below are All Commands currently working
+===========================================
+--action-compose is default
+
+Below are the Commands that are on-deck
+===========================================
+--action-preview
+--action-mask
+--limit=NN ("100 items" is supported, but overkill error if string has anthing other than single/double quotes and '<space>items' is error OOAAOC)
+--limit-idlist=<csv> digits, commas and spaces only, validates that idlist is IN all entity_id_array
+
+Notes
+===========================================
+--roll-back not-supported
+--limit="NN seconds" or any such not supported
+there is no expectation that 'already mask matching' records will be omitted
+==============================================================
+
+Below are All Commands from Migrate Module:
+===========================================
+https://www.drupal.org/node/1561820
+migrate-analyze (maz)   Analyze the source fields for a migration.
+migrate-audit (ma)  View information on problems in a migration.
+migrate-register (mreg)     Register or re-register any statically defined migrations.
+migrate-deregister  Remove all tracking of a migration
+migrate-fields-destination (mfd)    List the fields available for mapping in a destination.
+migrate-fields-source (mfs)     List the fields available for mapping from a source.
+migrate-import (mi)     Perform one or more migration processes
+migrate-mappings (mm)   View information on all field mappings in a migration.
+migrate-messages (mmsg)     View any messages associated with a migration.
+migrate-reset-status (mrs)  Reset a active migration's status to idle
+migrate-rollback (mr)   Roll back the destination objects from a given migration
+migrate-status (ms)     List all migrations with current status.
+migrate-stop (mst)  Stop an active migration operation
+migrate-wipe (mw)   Delete all nodes from specified content types.
+===========================================
+Arguments
+
+migration
+Name of migration(s) to import. Delimit multiple using commas.
+Options
+
+--all
+Process all migrations that come after the specified migration. If no value is supplied, all migrations are processed.
+
+--feedback
+Frequency of progress messages, in seconds or items processed
+
+--file_function
+Override file function to use when migrating images.
+
+--force
+Force an operation to run, even if all dependencies are not satisfied
+
+--group
+Name of the migration group to run
+
+--idlist
+A comma delimited list of ids to import or rollback. If unspecified, migrate imports all pending items or rolls back all items for the content set.
+
+--instrument
+Capture performance information (timer, memory, or all)
+
+--limit
+Limit on the length of each migration process, expressed in seconds or number of items
+
+--needs-update
+Reimport up to 10K records where needs_update=1. This option is only needed when your Drupal DB is on a different DB server from your source data. Otherwise, these records get migrated with just migrate-import.
+
+--rollback
+Rollback specified migration(s) if applicable.
+
+--stop
+Stop specified migration(s) if applicable.
+
+--update
+In addition to processing unimported items from the source, update previously-imported items with new data
