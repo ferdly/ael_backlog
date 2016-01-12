@@ -4,10 +4,11 @@
  * Example function.
  */
 
-function _drush_execute_command($command = NULL, $limit = 'EEMPTY', $bundle = NULL, $entity = NULL, $feedback = NULL) {
+function _drush_execute_command($command = NULL, $bundle = NULL, $additional_option_array = array()) {
     //$limit as zero means all
     require_once 'src/ael_backlog_object.php';
-    $label = new ael_backlog_object($command, $bundle, $entity);
+    $label = new ael_backlog_object($command, $bundle, $additional_option_array);
+    // $label = new ael_backlog_object($bundle, $command, $additional_option_array);
     $label->unpack();
     // switch instead of if-else to make more extensible
     switch ($label->output_message_type) {

@@ -7,6 +7,8 @@ class ael_backlog_object
     var $entity;
     var $limit;
     var $feedback;
+    var $entity_array = array();
+    var $bundle_array = array();
     var $entity_id_array = array();
     var $ael_config; //= array();
     var $ael_config_pattern; //= array();
@@ -30,60 +32,60 @@ class ael_backlog_object
     var $space = "zSPACEz";
     var $temp_ouput;
 
-    public function  __construct($command, $bundle, $entity)
+    public function  __construct($command = 'compose', $bundle, $additional_option_array = array())
     {
         $this->command = $command;
         $this->bundle = $bundle;
-        $this->entity = $entity;
-        $this->limit = $limit;
-        $this->feedback = $feedback;
+        // $this->entity = $entity;
+        // $this->limit = $limit;
+        // $this->feedback = $feedback;
     }
 
     public function unpack()
     {
 
         $this->unpack_command();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->unpack_all_entities_method();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->unpack_bundle();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->unpack_ael_config();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->unpack_mask_pattern();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->unpack_mask_php();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->unpack_mask_config();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->unpack_mask_fields();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->unpack_update_sql_smarty();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->unpack_entity_id_array();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->unpack_update_sql_rendered();
-        if ($this->output_message_type != 'success') {
+        if (1 == 2 && $this->output_message_type != 'success') {
             return;
         }
         $this->gather_output();
@@ -93,6 +95,14 @@ class ael_backlog_object
     public function unpack_command()
     {
         $command = $this->command;
+        $this->bundle = $command;
+        $command = 'compose';
+        $this->command = $command;
+        /**
+         * @circleback get command dynamically
+         *
+         * @var        array
+         */
         $supported = array('compose', 'preview', 'mask');
         if (!in_array($command, $supported)) {
             $this->supported_command_array = $supported; // dynamic overload for print_r() purposes
@@ -111,16 +121,24 @@ class ael_backlog_object
 
     public function unpack_bundle()
     {
-        $entity_default = 'node';
-        $bundle_default = 'player_standing';
-        /**
-         * @circleback get the parameter from the drush command
-         */
-        $this->entity = $entity_default;
-        $this->bundle = $bundle_default;
-        /**
-         * @todo get_var(entityreference-base-tables)
-         */
+        $entity_bundle_array = field_info_bundles();
+        $i = 1;
+        foreach ($entity_bundle_array as $entity => $bundle_array) {
+            foreach ($bundle_array as $bundle => $value_array) {
+                // $this->temp_ouput[$entity][$bundle] = $i;
+                $result[$bundle] = $entity;
+                $i++;
+            }
+        }
+        $this->entity = $result[$this->bundle];
+        $this->bundle_array = $result;
+        $supported = array_keys($result);
+        if (!in_array($this->bundle, $supported)) {
+            $this->output_message = "\"{$this->bundle}\" is NOT a supported bundle.";
+            $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+        }
+        return;//no change to $command
+
     }
 
     public function unpack_ael_config ()
@@ -412,9 +430,17 @@ class ael_backlog_object
     }
     public function gather_output ()
     {
+        $crlf = "\r\n"; //$this->crlf; // use ztring_replace() method of this gets too hairy
+        $tab = "    "; //$this->tab;
+        $space = " "; //$this->space;
         $attribute_array = array();
+        $leading_output_string = "=====================================";
+        $trailing_output_string = "\r\n=====================================";
+        #\_ overload either above below
         switch ($this->command) {
             case 'compose':
+                $leading_output_string = '/*======= SQL Code Block Start ========*/';
+                $trailing_output_string = $crlf . '/*======== SQL Code Block End =========*/';
                 $attribute_array[] = 'update_sql_rendered';
                 $this->output_message = 'Okay, I will compose the SQL';
                 break;
@@ -435,41 +461,55 @@ class ael_backlog_object
         $attribute_title_array = array();
         $att_count = count($attribute_array);
         if ($att_count > 0) {
-            $this->output_string = "=====================================";
+            $this->output_string = '';
+            $this->output_string .= $leading_output_string;
             $pre_block = $att_count > 0?"\r\n=====\r\n":'';
             $attribute_title = empty($attribute_title_array[$attribute])?$attribute:$attribute_title_array[$attribute];
             foreach ($attribute_array as $index => $attribute) {
-                $this->output_string .= "\r\n=====\r\n" . $attribute . ":\r\n" . print_r($this->$attribute, TRUE);
+                // $this->output_string .= "\r\n=====\r\n" . $attribute . ":";//Maybe Not
+                $this->output_string .= "\r\n" . print_r($this->$attribute, TRUE);
             } //END foreach()
-            $this->output_string .= "\r\n=====================================\r\n";
+            $this->output_string .= $trailing_output_string;
             return;
         }
+        $entity_bundle_array = field_info_bundles();
+        $i = 1;
+        foreach ($entity_bundle_array as $entity => $bundle_array) {
+            foreach ($bundle_array as $bundle => $value_array) {
+                // $this->temp_ouput[$entity][$bundle] = $i;
+                $this->temp_ouput[] = $bundle;
+                $i++;
+            }
+        }
+        // $this->temp_ouput = array_keys(field_info_bundles());
         $this->output_string = "=====================================";
         $attribute_array = array(
-         // 'command',
-        // 'bundle',
+         'command',
+        'bundle',
         'entity',
         // 'limit',
         // 'feedback',
-        // 'entity_array',
+        'entity_id_array',
+        'entity_array',
+        'bundle_array',
         // 'ael_config',
         // 'ael_config_pattern',
         // 'ael_config_php',
         // 'nid_array',
         // 'mask',
-        'mask_config_array',
+        // 'mask_config_array',
         // 'mask_field_array',
-        'mask_join_array',
-        'mask_sql_smarty',
+        // 'mask_join_array',
+        // 'mask_sql_smarty',
         // 'mask_rendered',
-        'update_sql_smarty',
+        // 'update_sql_smarty',
         // 'update_sql_rendered',
         // 'output_string',
         'output_message',
         'output_message_type',
         // 'stack',
         // 'stack_type',
-        'temp_ouput',
+        // 'temp_ouput',
         );
         if (count($attribute_array) > 0) {
             foreach ($attribute_array as $index => $attribute) {

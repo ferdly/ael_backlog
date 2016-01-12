@@ -29,13 +29,9 @@ function ael_backlog_drush_command() {
 function drush_ael_backlog_command($command = FALSE) {
 
   // Check for existence of argument
-    $options = array(
-      'compose' => dt('Compose SQL'),
-      'preview' => dt('Preview Result'),
-      'mask' => dt('Preview The Mask and its SQL'),
-      );
+    $options = _bundle_options();
     if (!$command) {
-        $command = drush_choice($options, dt('What kind of code would you like to generate?'));
+        $command = drush_choice($options, dt('For which Bundle would you like to generate \'Auto Enity-Label Back-Log\' SQL Code?'));
     }
 
   // Check for correct argument
@@ -44,16 +40,22 @@ function drush_ael_backlog_command($command = FALSE) {
   $correct_args_count = count($correct_args);
   $first_args = $correct_args;
   $last_arg = array_pop($first_args);
-  $correct_args_grammer = '';
-  $correct_args_grammer = $correct_args_count > 1?'between ':$correct_args_grammer;
-  $correct_args_grammer = $correct_args_count > 2?'among ':$correct_args_grammer;
-  $correct_args_string = '"' . implode('&quot;, &quot;', $first_args) . '"';
-  // $correct_args_string = $correct_args_grammer .  $correct_args_string;
-  $correct_args_string .= $correct_args_count > 1?' and "' . $last_arg . '"':' "' . $last_arg . '"';
-  // $correct_args_string = $last_arg;
-  if (1 == 2 && !in_array($command, $correct_args)) {
+  $first_args_list = implode(", ", $first_args);
+  $zero = 'Please ask for assistance, there are currently no auto_entitylabel configurations in use';
+  $non_zero = 'Please select';
+  $grammar = $correct_args_count > 2?' among: ':': ';
+  $grammar = $correct_args_count == 2?' between: ':$grammar;
+  $list = '';
+  $list = $correct_args_count == 1?$last_arg:$list;
+  $list = $correct_args_count > 1?$first_args_list. ' and ' . $last_arg:$list;
+  if ($correct_args_count == 0) {
+    $string = $zero;
+  }else{
+    $string = $non_zero . $grammar . $list . '. (Or supply no bundle and select from promted values.)';
+  }
+  if (!in_array($command, $correct_args)) {
     // return drush_set_error(dt('"@type" is not a valid code type. Please choose between "success" and "error".', array('@type' => $command)));
-    return drush_set_error(dt('"@type" is not a valid code type. Please choose @arg_string.', array('@type' => $command,'@arg_string' => $correct_args_string)));
+    return drush_set_error(dt('"@type" is not a valid bundle (content type). @string', array('@type' => $command,'@string' => $string)));
   }
 
   // Option
@@ -71,4 +73,26 @@ function drush_ael_backlog_command($command = FALSE) {
         _drush_execute_command($command);
     }
 
+}
+
+function _bundle_options(){
+  $entity_bundle_array = field_info_bundles();
+  foreach ($entity_bundle_array as $entity => $bundle_array) {
+    foreach ($bundle_array as $bundle => $value_array) {
+      $check_vars[$bundle] = $entity;
+      $is_ael = _check_ael_bundle($bundle, $entity);
+      if ($is_ael == 1) {
+        $content_type = $entity == 'node'?' (content type)':'';
+        $string = "'{$bundle}' [bundle{$content_type} of '{$entity}']";
+        $options[$bundle] = dt($string);
+      }
+    }
+  }
+
+  return $options;
+}
+function _check_ael_bundle($bundle, $entity){
+  $var_name = 'auto_entitylabel_' . $entity . '_' . $bundle;
+  $is_ael = variable_get($var_name, 0) + 0;
+  return $is_ael;
 }
