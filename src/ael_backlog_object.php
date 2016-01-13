@@ -7,6 +7,7 @@ class ael_backlog_object
     var $entity;
     var $option_array = array();
     var $limit;
+    var $limit_page;
     var $limit_idlist;
     var $rand = false;
     var $feedback;
@@ -136,7 +137,9 @@ class ael_backlog_object
         $action = $this->action;
         $option_array = $this->option_array;
 
-        $limit = empty($option_array['limit'])?0:$option_array['limit'];
+        $limit = empty($option_array['limit'])?0:$option_array['limit'] + 0;
+
+        $limit_page = empty($option_array['limit_page'])?0:$option_array['limit_page'] + 0;
 
         $limit_idlist = empty($option_array['limit_idlist'])?'':$option_array['limit_idlist'];
         $limit_idlist = str_replace(' ', '', $limit_idlist);
@@ -154,6 +157,7 @@ class ael_backlog_object
 
 
         $this->limit = $limit;
+        $this->limit_page = $limit_page;
         $this->limit_idlist = $limit_idlist_array;
         $this->rand = $rand;
 
@@ -472,16 +476,48 @@ class ael_backlog_object
         if ($this->limit == 0 && $this->action == 'preview') {
             $this->limit = 1; //change default of preview
         }
+      /**
+       * @todo validate limit-page
+       * maybe reject suppled Zero
+       * * count($entity_id_array) < $limt + $limit * $page is an error
+       * * * this is an extension of existing validation
+       */
         if ($this->rand === TRUE) {
             shuffle($this->entity_id_array);
             #\_ this works with 0 (all), and limit (since limit 3 is first 3 shuffledm etc)
         }
+
+        $limit_page = $this->limit_page + 0;
+        $limit_page_is_positive_integer = $limit_page == abs(floor($limit_page))?TRUE:FALSE;
+        // $limit_page_is_positive_integer = $limit_page == 0?FALSE:$limit_page_is_positive_integer;
+        if ($limit_page_is_positive_integer !== TRUE) {
+            $this->output_message = "The limit_page option must be a Positive Integer.";
+            $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+            return;
+        }
+        if ($this->rand === TRUE && $limit_page !== 0) {
+            $this->output_message = "The limit_page option and the rand option are in conflict.";
+            $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+            return;
+        }
+        if (count($limit_idlist) > 0 && $limit_page !== 0) {
+            $this->output_message = "limit_page and limit_listid are in conflict.";
+            $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+            return;
+        }
+        if ($limit_page !== 0 && $limit_passed === 'NNULL') {
+            $this->output_message = "The limit_page option requires the limit option to be actively set. ";
+            $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+            return;
+        }
+
         $limit_idlist = $this->limit_idlist;
         if (count($limit_idlist) > 0 && $limit_passed !== 'NNULL') {
             $this->output_message = "limit and limit_listid are in conflict.";
             $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
             return;
         }
+
         $entity_id_array = $this->entity_id_array;
         if (count($limit_idlist) > 0) {
             if($this->rand === TRUE) {
@@ -510,13 +546,23 @@ class ael_backlog_object
                 return;
         }
         if ($this->limit > 0) {
-            $offset = -1 * $this->limit;
-            $this->entity_id_array = array_slice($entity_id_array, $offset);
-            #\_ since shuffle already randomized, taking from front or back of array doesn't matter
+            $all_count = count($entity_id_array);
+            $limit = $this->limit;
+            $page_offset = $this->limit_page - 1; //page = 1 has no offset, right; validated above
+            $page_offset = $page_offset < 0?0:$page_offset; //BUT unsupplied or Zero is supported
+            $offset = $limit * $page_offset;
+            $all_limit = $offset + $limit;
+            if ($all_limit > $all_count) {
+                $this->output_message = "limit_page and limit will exceed bundle count.";
+                $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
+                return;
+            }
+            $this->entity_id_array = array_slice($entity_id_array, $offset, $limit);
         }
 
         /**
          * evaluates limit, limit_idlist and rand
+         * @todo consider more efficient control structure than IFs
          * @todo evaluate other options?
          * @todo fully test every permutation
          */
@@ -598,6 +644,7 @@ class ael_backlog_object
         'entity',
         'option_array',
         'limit',
+        'limit_page',
         'limit_idlist',
         'rand',
         // 'feedback',

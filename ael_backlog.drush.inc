@@ -5,16 +5,18 @@
  */
 function ael_backlog_drush_command() {
 
-  $items['ael-backlog-command'] = array(
-    'description' => 'Demonstrate how AEL Backlog command works.',
+  $items['ael-backlog'] = array(
+    'description' => "Description ael_backlog: \r\nComposes SQL Code to apply Auto-Entry Label Titles to current titles. Useful when there is lots of data already entered before AEL implemented, or when the configuration of EAL is tweaked.",
     'aliases' => array('label'), //anagram of AEL BL
     'arguments' => array(
-      'action' => 'The type of statement (compose or preview).',
+      'bundle' => "Entity 'Bundle' (for node read 'Content Type'). If not supplied, list of AEL enabled bundles are generated to select from.",
     ),
     'options' => array(
       'limit' => 'The number of items to execute for the command (smart defaults as per action, and validated).',
+      'limit-page' => 'Applies an Offset of limit times limit-page. The expectation is that the user leaves limit constant and increments the page, although there is no way to enforce this use (validated).',
       'limit-idlist' => 'A Comma Separated Value (csv) list of entity_id values to execute for the command (validated).',
-      'rand' => 'In conjunction with limit only (at this time). Validated.', 'action' => 'compose, preview, or mask with compose being the default. This will affect the default of limit.',
+      'rand' => 'In conjunction with limit or with limit-idlist or on its own. Randomizes the order of the lines of code Validated.',
+      'action' => 'compose, preview, or mask with compose being the default. This will affect the default of limit.',
     ),
     'examples' => array(
       'drush label --action=mask' => 'PENDING Prints the statement once with the error flag.',
@@ -29,7 +31,7 @@ function ael_backlog_drush_command() {
 /**
  * Callback for the drush-demo-command command
  */
-function drush_ael_backlog_command($bundle = FALSE) {
+function drush_ael_backlog($bundle = FALSE) {
 
   // Check for existence of argument
     $options = _bundle_options();
@@ -70,6 +72,7 @@ function drush_ael_backlog_command($bundle = FALSE) {
   $supported_option_array = array(
     'action',
     'limit',
+    'limit-page',
     'limit-idlist',
     'rand',
     );
@@ -81,6 +84,7 @@ function drush_ael_backlog_command($bundle = FALSE) {
   }
   /**
    * @todo validate, unpack here? I think in object method
+   * @todo remove application of empty $$option to $additional_option_array
    */
   _drush_execute_command($bundle, $action, $additional_option_array);
   // _drush_execute_command($bundle, $action);
