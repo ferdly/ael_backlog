@@ -17,6 +17,7 @@ function ael_backlog_drush_command() {
       'limit-idlist' => 'A Comma Separated Value (csv) list of entity_id values to execute for the command (validated).',
       'rand' => 'In conjunction with limit or with limit-idlist or on its own. Randomizes the order of the lines of code Validated.',
       'action' => 'compose, preview, or mask with compose being the default. This will affect the default of limit.',
+      'dev' => "Allow for skipping over the 'clean' output in favor of 'dev' output as the code progresses. This may be removed or made more useful developers not coding this module.",
     ),
     'examples' => array(
       'drush label --action=mask' => 'PENDING Prints the statement once with the error flag.',
@@ -75,6 +76,8 @@ function drush_ael_backlog($bundle = FALSE) {
     'limit-page',
     'limit-idlist',
     'rand',
+    'indent',
+    'dev',
     );
   foreach ($supported_option_array as $index => $option) {
     $option = strtolower($option);//maybe enforce case sensitivity

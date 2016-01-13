@@ -10,6 +10,7 @@ class ael_backlog_object
     var $limit_page;
     var $limit_idlist;
     var $rand = false;
+    var $indent;
     var $feedback;
     var $entity_array = array();
     var $bundle_array = array();
@@ -155,11 +156,25 @@ class ael_backlog_object
         $rand = $option_array['rand'] === '1'?true:$rand;
         // $rand = $rand === true?'TTRUE':'FFALSE';
 
+        $indent_passed = strtolower($option_array['indent']);
+        $true_values_array = array('true', 'yes', 'on', '1',);
+        $false_values_array = array('false', 'no', 'off', '0');
+        $indent = NULL;
+        $indent = in_array($indent_passed, $true_values_array)?TRUE:$indent;
+        $indent = in_array($indent_passed, $false_values_array)?FALSE:$indent;
+
+        $dev_passed = strtolower($option_array['dev']);
+        $dev = NULL;
+        $dev = in_array($dev_passed, $true_values_array)?TRUE:$dev;
+        $dev = in_array($dev_passed, $false_values_array)?FALSE:$dev;
+
 
         $this->limit = $limit;
         $this->limit_page = $limit_page;
         $this->limit_idlist = $limit_idlist_array;
         $this->rand = $rand;
+        $this->indent = $indent;
+        $this->dev = $dev;
 
     }
 
@@ -270,8 +285,14 @@ class ael_backlog_object
         /**
          * @circleback - all steps regarding php are left for later
          */
-        $crlf = $this->crlf;
-        $tab = $this->tab;
+        if ($this->indent === true) {
+            $crlf = $this->crlf;
+            $tab = $this->tab;
+        }else{
+        $crlf = ' ';
+        $tab = ' ';
+
+        }
         $mask_base_table = $this->entity_array[$this->entity]['table'];
         $mask_base_alias = $this->entity_array[$this->entity]['alias'];
         $mask_base_primary = $this->entity_array[$this->entity]['primary'];
@@ -581,7 +602,7 @@ class ael_backlog_object
         $update_sql_smarty = $this->update_sql_smarty;
         $update_sql_rendered = '';
         foreach ($this->entity_id_array as $index => $entity_id) {
-            $singleton = str_replace($smarty_search, $entity_id, $update_sql_smarty) . "\r\n";
+            $singleton = str_replace($smarty_search, $entity_id, $update_sql_smarty) . "\r\n";//Hard Coded, does NOT depend on $crlf
             $update_sql_rendered .= $singleton;
         }
         $this->update_sql_rendered = $update_sql_rendered;
@@ -600,20 +621,20 @@ class ael_backlog_object
             case 'compose':
                 $leading_output_string = '/*======= SQL Code Block Start ========*/';
                 $trailing_output_string = $crlf . '/*======== SQL Code Block End =========*/';
-                // $attribute_array[] = 'update_sql_rendered';
                 if ($dev === FALSE) {
+                    $attribute_array[] = 'update_sql_rendered';
                     $this->output_message = 'Okay, I will compose the SQL';
                 }
                 break;
             case 'preview':
-                // $attribute_array[] = 'update_sql_rendered';
                 if ($dev === FALSE) {
+                    $attribute_array[] = 'update_sql_rendered';
                     $this->output_message = 'Okay, I will compose a preview of the SQL and some results';
                 }
                 break;
             case 'mask':
-                // $attribute_array[] = 'update_sql_rendered';
                 if ($dev === FALSE) {
+                    $attribute_array[] = 'update_sql_rendered';
                     $this->output_message = 'Okay, I will compose the mask SQL and generate and example';
                 }
                 break;
