@@ -89,7 +89,7 @@ function drush_ael_backlog($bundle = FALSE) {
   }
   /**
    * @todo validate, unpack here? I think in object method
-   * @todo remove application of empty $$option to $additional_option_array
+   * @circleback remove application of empty $$option to $additional_option_array
    */
   _drush_execute_command($bundle, $action, $additional_option_array);
   // _drush_execute_command($bundle, $action);

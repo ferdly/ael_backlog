@@ -500,10 +500,29 @@ class ael_backlog_object
             return;
         }
         $entity_id_array = array(58,59,60,61,62,63,64,65,66,67,68,69,70);
+
+        $bundle = $this->bundle;
+        $table = 'from enity_array';
+        $table_dbtng = '{' . $table . '}';
+        $alias = 'from enity_array'; //maybe not needed
+        $primary = 'from enity_array';
+        $entity_info_array = entity_get_info($this->entity);
         /**
-         * @todo evaluate limit, list, rand, (other options)
+         * @todo use entity_get_info() in unpack_all_entities (instead of db_query)
+         * * \_ pretty sure this will have it all, need to check though
          */
+        $bundle_fieldname = $entity_info_array['entity keys']['bundle'];
+        $sql = "SELECT $primary FROM $table_dbtng WHERE $bundle_fieldname = :bundle";
+        $fetchAll = 'the thing to get just the array of entity_ids, also use dbtng not SQL above';
+        // $fetchAll_OR_fetchAssoc = db_query($sql,
+        //         array(':bundle' => $bundle))->fetchAssoc();
+
+
+
+
+
         $this->entity_id_array = $entity_id_array;
+
     }
 
 
@@ -657,12 +676,19 @@ class ael_backlog_object
                 break;
             case 'preview':
                 if ($dev === FALSE) {
+                    /**
+                     * @todo render preview with limit up-to 10
+                     * @todo see if preview can be an array, thus SELECT can have many rows -- pretty sure it can be done
+                     */
                     $attribute_array[] = 'update_sql_rendered';
                     $this->output_message = 'Okay, I will compose a preview of the SQL and some results';
                 }
                 break;
             case 'mask':
                 if ($dev === FALSE) {
+                    /**
+                     * @todo work out really how mask is useful?...
+                     */
                     $attribute_array[] = 'update_sql_rendered';
                     $this->output_message = 'Okay, I will compose the mask SQL and generate and example';
                 }
@@ -673,7 +699,7 @@ class ael_backlog_object
                 // $this->output_message_type = 'OOAOC should be caught before output.';
                 break;
         }
-        $attribute_title_array = array();
+        $attribute_title_array = array('temp_output'=>'Temporary Output');
         $att_count = count($attribute_array);
         if ($att_count > 0) {
             $this->output_string = '';
@@ -687,6 +713,11 @@ class ael_backlog_object
             $this->output_string .= $trailing_output_string;
             return;
         }
+        $entity_info_array = entity_get_info();
+        // $bundle = $entity_info_array['entity keys']['bundle'];
+        // $this->temp_output = $bundle;
+        $this->temp_output = $entity_info_array;
+
         $this->output_string = "=====================================";
         $attribute_array = array(
          'action',
@@ -720,11 +751,12 @@ class ael_backlog_object
         'output_message_type',
         // 'stack',
         // 'stack_type',
-        // 'temp_ouput',
+        'temp_output',
         );
         if (count($attribute_array) > 0) {
             foreach ($attribute_array as $index => $attribute) {
-                $this->output_string .= "\r\n=====\r\n" . $attribute . ":\r\n" . print_r($this->$attribute, TRUE);
+                $attribute_title = empty($attribute_title_array[$attribute])?$attribute:$attribute_title_array[$attribute];
+                $this->output_string .= "\r\n=====\r\n" . $attribute_title . ":\r\n" . print_r($this->$attribute, TRUE);
             } //END foreach()
         }else{
             $this->output_string .= "\r\n" . print_r($this, TRUE);
