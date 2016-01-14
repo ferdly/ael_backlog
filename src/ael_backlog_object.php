@@ -6,11 +6,12 @@ class ael_backlog_object
     var $bundle;
     var $entity;
     var $option_array = array();
-    var $limit;
-    var $limit_page;
-    var $limit_idlist;
-    var $rand = false;
-    var $indent;
+    var $option_limit;
+    var $option_limit_page;
+    var $option_limit_idlist;
+    var $option_rand = false;
+    var $option_indent;
+    var $option_dev;
     var $feedback;
     var $entity_array = array();
     var $bundle_array = array();
@@ -115,6 +116,7 @@ class ael_backlog_object
             return;
         }
         $this->gather_output();
+        // $this->gather_output($dev);//only as a last gasp to see data
         return;
     }
 
@@ -131,54 +133,55 @@ class ael_backlog_object
             $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
         }
         $this->action = $action;
-        return;//no change to $action
+        return;
     }
     public function unpack_options()
     {
         $action = $this->action;
         $option_array = $this->option_array;
 
-        $limit = empty($option_array['limit'])?0:$option_array['limit'] + 0;
+        $option_limit = empty($option_array['option_limit'])?0:$option_array['option_limit'] + 0;
 
-        $limit_page = empty($option_array['limit_page'])?0:$option_array['limit_page'] + 0;
+        $option_limit_page = empty($option_array['option_limit_page'])?0:$option_array['option_limit_page'] + 0;
 
-        $limit_idlist = empty($option_array['limit_idlist'])?'':$option_array['limit_idlist'];
-        $limit_idlist = str_replace(' ', '', $limit_idlist);
-        $limit_idlist = str_replace('"', '', $limit_idlist);
-        $limit_idlist = str_replace("'", '', $limit_idlist);
-        $limit_idlist_array = explode(',', $limit_idlist);
-        if (count($limit_idlist_array) == 1 && empty($limit_idlist[0])) {
-            $limit_idlist_array = array();
+        $option_limit_idlist = empty($option_array['option_limit_idlist'])?'':$option_array['option_limit_idlist'];
+        $option_limit_idlist = str_replace(' ', '', $option_limit_idlist);
+        $option_limit_idlist = str_replace('"', '', $option_limit_idlist);
+        $option_limit_idlist = str_replace("'", '', $option_limit_idlist);
+        $option_limit_idlist_array = explode(',', $option_limit_idlist);
+        if (count($option_limit_idlist_array) == 1 && empty($option_limit_idlist[0])) {
+            $option_limit_idlist_array = array();
         }
 
-        $rand = $option_array['rand'] === 'rand'?true:false;
-        $rand = $option_array['rand'] === 'true'?true:$rand;
-        $rand = $option_array['rand'] === '1'?true:$rand;
-        // $rand = $rand === true?'TTRUE':'FFALSE';
-
-        $indent_passed = strtolower($option_array['indent']);
         $true_values_array = array('true', 'yes', 'on', '1',);
         $false_values_array = array('false', 'no', 'off', '0');
-        $indent = NULL;
-        $indent = in_array($indent_passed, $true_values_array)?TRUE:$indent;
-        $indent = in_array($indent_passed, $false_values_array)?FALSE:$indent;
 
-        $dev_passed = strtolower($option_array['dev']);
-        $dev = NULL;
-        $dev = in_array($dev_passed, $true_values_array)?TRUE:$dev;
-        $dev = in_array($dev_passed, $false_values_array)?FALSE:$dev;
+        $option_rand = $option_array['option_rand'] === 'option_rand'?true:false;
+        $option_rand = in_array($option_array['option_rand'],$true_values_array)?true:$option_rand;
+        // $option_rand = $option_rand === true?'TTRUE':'FFALSE';
+
+        $option_indent_passed = strtolower($option_array['option_indent']);
+        $option_indent = NULL;
+        $option_indent = in_array($option_indent_passed, $true_values_array)?TRUE:$option_indent;
+        $option_indent = in_array($option_indent_passed, $false_values_array)?FALSE:$option_indent;
+
+        $option_dev_passed = strtolower($option_array['option_dev']);
+        $option_dev = NULL;
+        $option_dev = in_array($option_dev_passed, $true_values_array)?TRUE:$option_dev;
+        $option_dev = in_array($option_dev_passed, $false_values_array)?FALSE:$option_dev;
 
 
-        $this->limit = $limit;
-        $this->limit_page = $limit_page;
-        $this->limit_idlist = $limit_idlist_array;
-        $this->rand = $rand;
-        $this->indent = $indent;
-        $this->dev = $dev;
+        $this->option_limit = $option_limit;
+        $this->option_limit_page = $option_limit_page;
+        $this->option_limit_idlist = $option_limit_idlist_array;
+        $this->option_rand = $option_rand;
+        $this->option_indent = $option_indent;
+        $this->option_dev = $option_dev;
 
     }
 
     public function unpack_all_entities_method()
+
     {
         // $variable_name = 'entityreference:base-tables';
         // $variable_default = 'MISSING:' . $this->entity . '_' . $this->bundle;
@@ -203,7 +206,7 @@ class ael_backlog_object
             $this->output_message = "\"{$this->bundle}\" is NOT a supported bundle.";
             $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
         }
-        return;//no change to $action
+        return;
 
     }
 
@@ -289,10 +292,10 @@ class ael_backlog_object
             $crlf = $this->crlf;
             $tab = $this->tab;
         }else{
-        $crlf = ' ';
-        $tab = ' ';
-
+        $crlf = '';
+        $tab = '';
         }
+        $space = $this->space;
         $mask_base_table = $this->entity_array[$this->entity]['table'];
         $mask_base_alias = $this->entity_array[$this->entity]['alias'];
         $mask_base_primary = $this->entity_array[$this->entity]['primary'];
@@ -349,8 +352,14 @@ class ael_backlog_object
         /**
          * @todo determine whether part of base entity table or bundle field
          */
-        $crlf = $this->crlf;
-        $tab = $this->tab;
+        if ($this->indent === true) {
+            $crlf = $this->crlf;
+            $tab = $this->tab;
+        }else{
+        $crlf = '';
+        $tab = '';
+
+        }
         $space = $this->space;
         $target_type = $config['reference_array'][0]['data']['target_type'];
         $target_entity = $this->entity_array[$target_type];
@@ -374,8 +383,8 @@ class ael_backlog_object
         $base_entity = $this->entity_array[$config['entity']];
         $base_smarty = '{' . $base_entity['alias'] . '.' . $base_entity['primary'] . '}';
         $outer_entity_id_smarty = $outer_alias . '.' . $outer_primary;
-        $target_entity_id_sql = "{$crlf}{$tab}SELECT {$target_alias}.{$target_field_name}{$crlf}{$tab}FROM {$target_table_name} {$target_alias}{$crlf}{$tab}WHERE {$target_alias}.entity_id = {$base_smarty}{$crlf}{$tab}";
-        $outer_field_sql = "{$crlf}{$tab}SELECT {$outer_alias}.{$outer_field_name}{$crlf}{$tab}FROM {$outer_table_name} {$outer_alias} {$crlf}{$tab}WHERE {$outer_alias}.{$outer_primary} = ({inner_sql})";
+        $target_entity_id_sql = "{$crlf}{$tab}SELECT {$target_alias}.{$target_field_name}{$crlf}{$tab}FROM {$target_table_name} {$target_alias}{$space}{$crlf}{$tab}WHERE {$target_alias}.entity_id = {$base_smarty}{$crlf}{$tab}";
+        $outer_field_sql = "{$crlf}{$tab}SELECT {$outer_alias}.{$outer_field_name}{$crlf}{$tab}FROM {$outer_table_name}{$space}{$outer_alias}{$space}{$crlf}{$tab}WHERE {$outer_alias}.{$outer_primary} = ({inner_sql})";
         $target_entity_id_sql = $this->utility_ztring_replace($target_entity_id_sql, 3);
         $field_sql = str_replace('{inner_sql}', $target_entity_id_sql, $outer_field_sql);
         $field_sql = $this->utility_ztring_replace($field_sql, 2);
@@ -422,8 +431,13 @@ class ael_backlog_object
 
     public function unpack_update_sql_smarty()
     {
-        $crlf = $this->crlf;
-        $tab = $this->tab;
+        if ($this->indent === true) {
+            $crlf = $this->crlf;
+            $tab = $this->tab;
+        }else{
+            $crlf = '';
+            $tab = '';
+        }
         $space = $this->space;
         $ael_this = 'SET @ael_this = (' . $this->mask_sql_smarty . ');';
         $entity = $this->entity_array[$this->entity];
@@ -434,7 +448,7 @@ class ael_backlog_object
         $ael_this = $this->utility_ztring_replace($ael_this);
         switch ($this->action) {
             case 'compose':
-                $update_sql_smarty = 'UPDATE ' . $table . ' ' . $alias . ' SET ' . $alias . '.title = (' . '@ael_this' . ') WHERE ' . $alias . '.' . $primary . ' = ' . $primary_smarty . ';';
+                $update_sql_smarty = "\r\nUPDATE " . $table . ' ' . $alias . ' SET ' . $alias . '.title = (' . '@ael_this' . ') WHERE ' . $alias . '.' . $primary . ' = ' . $primary_smarty . ';';
                 $update_sql_smarty = $ael_this . $space . $crlf . $update_sql_smarty;
                 $update_sql_smarty = $this->utility_ztring_replace($update_sql_smarty);
                 break;
@@ -459,13 +473,19 @@ class ael_backlog_object
         $crlf_z = $this->crlf;
         $tab_z = $this->tab;
         $space_z = $this->space;
-        $crlf = "\r\n";
         $tab_level = $tab_level + 0;
         $i = 0;
         $tab = '';
         while ($i < $tab_level) {
             $tab .= "    ";
             $i++;
+        }
+        if ($this->indent === true) {
+            $crlf = "\r\n";
+            $tab = $tab;
+        }else{
+            $crlf = '';
+            $tab = '';
         }
         $space = " ";
         $string = str_replace($crlf_z, $crlf, $string);
@@ -492,10 +512,10 @@ class ael_backlog_object
         if ($this->action == 'mask') {
             return;
         }
-        $limit_passed = !isset($this->option_array['limit'])?'NNULL':$this->option_array['limit'];
+        $option_limit_passed = !isset($this->option_array['option_limit'])?'NNULL':$this->option_array['option_limit'];
 
-        if ($this->limit == 0 && $this->action == 'preview') {
-            $this->limit = 1; //change default of preview
+        if ($this->option_limit == 0 && $this->action == 'preview') {
+            $this->option_limit = 1; //change default of preview
         }
       /**
        * @todo validate limit-page
@@ -503,83 +523,89 @@ class ael_backlog_object
        * * count($entity_id_array) < $limt + $limit * $page is an error
        * * * this is an extension of existing validation
        */
-        if ($this->rand === TRUE) {
+        if ($this->option_rand === TRUE) {
             shuffle($this->entity_id_array);
             #\_ this works with 0 (all), and limit (since limit 3 is first 3 shuffledm etc)
         }
 
-        $limit_page = $this->limit_page + 0;
-        $limit_page_is_positive_integer = $limit_page == abs(floor($limit_page))?TRUE:FALSE;
-        // $limit_page_is_positive_integer = $limit_page == 0?FALSE:$limit_page_is_positive_integer;
-        if ($limit_page_is_positive_integer !== TRUE) {
-            $this->output_message = "The limit_page option must be a Positive Integer.";
+        $option_limit_page = $this->option_limit_page + 0;
+        $option_limit_page_is_positive_integer = $option_limit_page == abs(floor($option_limit_page))?TRUE:FALSE;
+        // $option_limit_page_is_positive_integer = $option_limit_page == 0?FALSE:$option_limit_page_is_positive_integer;
+        if ($option_limit_page_is_positive_integer !== TRUE) {
+            $this->output_message = "The limit-page option must be a Positive Integer.";
             $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
             return;
         }
-        if ($this->rand === TRUE && $limit_page !== 0) {
-            $this->output_message = "The limit_page option and the rand option are in conflict.";
+        if ($this->option_rand === TRUE && $option_limit_page !== 0) {
+            $this->output_message = "The limit-page option and the rand option are in conflict.";
             $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
             return;
         }
-        if (count($limit_idlist) > 0 && $limit_page !== 0) {
-            $this->output_message = "limit_page and limit_listid are in conflict.";
+        if (count($option_limit_idlist) > 0 && $option_limit_page !== 0) {
+            $this->output_message = "limit-page and limit_listid are in conflict.";
             $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
             return;
         }
-        if ($limit_page !== 0 && $limit_passed === 'NNULL') {
-            $this->output_message = "The limit_page option requires the limit option to be actively set. ";
+        if ($option_limit_page !== 0 && $option_limit_passed === 'NNULL') {
+            $this->output_message = "The limit-page option requires the limit option to be actively set. ";
             $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
             return;
         }
 
-        $limit_idlist = $this->limit_idlist;
-        if (count($limit_idlist) > 0 && $limit_passed !== 'NNULL') {
-            $this->output_message = "limit and limit_listid are in conflict.";
+        $option_limit_idlist = $this->option_limit_idlist;
+        if (count($option_limit_idlist) > 0 && $option_limit_passed !== 'NNULL') {
+            $this->output_message = "limit and option_limit_listid are in conflict.";
             $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
             return;
         }
 
         $entity_id_array = $this->entity_id_array;
-        if (count($limit_idlist) > 0) {
-            if($this->rand === TRUE) {
-             shuffle($limit_idlist);
+        if (count($option_limit_idlist) > 0) {
+            if($this->option_rand === TRUE) {
+             shuffle($option_limit_idlist);
              #\_ seems silly, but if one wants to have a semi-constant test idlist and randomize that, that makes sense
             }
             $id_of_list_error = FALSE;
-            foreach ($limit_idlist as $index => $entity_id ) {
+            foreach ($option_limit_idlist as $index => $entity_id ) {
                 if (!in_array($entity_id, $entity_id_array)) {
                     $id_of_list_error = TRUE;
                     break;
                 }
             }
             if ($id_of_list_error === FALSE) {
-                $this->entity_id_array = $limit_idlist;
+                $this->entity_id_array = $option_limit_idlist;
                 return;
             }else{
                 $this->output_message = "\"{$entity_id}\" is NOT a valid entity_id (first encountered).";
                 $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
                 return;
             }
-        } //END limit_idlist
-        if ($this->limit > count($entity_id_array)) {
+        } //END option_limit_idlist
+        if ($this->option_limit > count($entity_id_array)) {
                 $this->output_message = "limit is NOT less than or equal to all entity ids.";
                 $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
                 return;
         }
-        if ($this->limit > 0) {
+        if ($this->option_limit > 0) {
             $all_count = count($entity_id_array);
-            $limit = $this->limit;
-            $page_offset = $this->limit_page - 1; //page = 1 has no offset, right; validated above
+            $option_limit = $this->option_limit;
+            $page_offset = $this->option_limit_page - 1; //page = 1 has no offset, right; validated above
             $page_offset = $page_offset < 0?0:$page_offset; //BUT unsupplied or Zero is supported
-            $offset = $limit * $page_offset;
-            $all_limit = $offset + $limit;
+            $offset = $option_limit * $page_offset;
+            $all_limit = $offset + $option_limit;
             if ($all_limit > $all_count) {
                 $this->output_message = "limit_page and limit will exceed bundle count.";
                 $this->output_message_type = __FUNCTION__ . ': ' . basename(__FILE__) . ' - line '. __LINE__;
                 return;
             }
-            $this->entity_id_array = array_slice($entity_id_array, $offset, $limit);
+            $this->entity_id_array = array_slice($entity_id_array, $offset, $option_limit);
         }
+
+        $count = count($this->entity_id_array);
+        $default_indent = $count == 1?TRUE:FALSE;
+        $option_indent  = $this->option_indent === TRUE?TRUE:$default_indent;
+        $option_indent  = $this->option_indent === FALSE?FALSE:$option_indent;
+        $this->option_indent = $option_indent;
 
         /**
          * evaluates limit, limit_idlist and rand
@@ -613,6 +639,9 @@ class ael_backlog_object
         $crlf = "\r\n"; //$this->crlf; // use ztring_replace() method of this gets too hairy
         $tab = "    "; //$this->tab;
         $space = " "; //$this->space;
+
+        $dev = $this->option_dev === TRUE?TRUE:$dev;
+
         $attribute_array = array();
         $leading_output_string = "=====================================";
         $trailing_output_string = "\r\n=====================================";
@@ -664,10 +693,12 @@ class ael_backlog_object
         'bundle',
         'entity',
         'option_array',
-        'limit',
-        'limit_page',
-        'limit_idlist',
-        'rand',
+        'option_limit',
+        'option_limit_page',
+        'option_limit_idlist',
+        'option_rand',
+        'option_indent',
+        'option_dev',
         // 'feedback',
         'entity_id_array',
         // 'entity_array',

@@ -16,6 +16,7 @@ function ael_backlog_drush_command() {
       'limit-page' => 'Applies an Offset of limit times limit-page. The expectation is that the user leaves limit constant and increments the page, although there is no way to enforce this use (validated).',
       'limit-idlist' => 'A Comma Separated Value (csv) list of entity_id values to execute for the command (validated).',
       'rand' => 'In conjunction with limit or with limit-idlist or on its own. Randomizes the order of the lines of code Validated.',
+      'indent' => 'Smart Defaults, but if you want to overload use yes or no',
       'action' => 'compose, preview, or mask with compose being the default. This will affect the default of limit.',
       'dev' => "Allow for skipping over the 'clean' output in favor of 'dev' output as the code progresses. This may be removed or made more useful developers not coding this module.",
     ),
@@ -82,7 +83,8 @@ function drush_ael_backlog($bundle = FALSE) {
   foreach ($supported_option_array as $index => $option) {
     $option = strtolower($option);//maybe enforce case sensitivity
     $$option = drush_get_option($option, NULL);
-    $key = str_replace('-', '_', $option);
+    $key = $option == 'action'?'':'option_';
+    $key .= str_replace('-', '_', $option);
     $additional_option_array[$key] = $$option;
   }
   /**
