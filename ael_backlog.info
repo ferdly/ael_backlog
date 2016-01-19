@@ -8,8 +8,9 @@ package = QIQgroup Tools
 core = 7.x
 dependencies[] = auto_entitylabel
 files[] = ael_backlog.module
-files[] = src/backlog_update_composer.php
-files[] = src/instantiate_backlog_update_composer.php
+files[] = src/ael_backlog_object.php
+;files[] = src/backlog_update_composer.php
+;files[] = src/instantiate_backlog_update_composer.php
 
 
 

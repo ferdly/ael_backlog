@@ -36,7 +36,7 @@ class ael_backlog_object
     var $crlf = "zCRLFz";
     var $tab = "zTABz";
     var $space = "zSPACEz";
-    var $temp_ouput;
+    var $temp_output;
 
     public function  __construct($bundle, $action, $additional_option_array)
     {
@@ -194,7 +194,7 @@ class ael_backlog_object
         $i = 1;
         foreach ($entity_bundle_array as $entity => $bundle_array) {
             foreach ($bundle_array as $bundle => $value_array) {
-                // $this->temp_ouput[$entity][$bundle] = $i;
+                // $this->temp_output[$entity][$bundle] = $i;
                 $result[$bundle] = $entity;
                 $i++;
             }
@@ -499,28 +499,39 @@ class ael_backlog_object
         if ($this->action == 'mask') {
             return;
         }
-        $entity_id_array = array(58,59,60,61,62,63,64,65,66,67,68,69,70);
-
+        // $entity_id_array = array(58,59,60,61,62,63,64,65,66,67,68,69,70);
+        $entity = $this->entity;
         $bundle = $this->bundle;
-        $table = 'from enity_array';
+        $bundle_string = "'" . $bundle . "'";
+        $entity_array = $this->entity_array;
+        $table = $this->entity_array[$entity]['table'];
         $table_dbtng = '{' . $table . '}';
-        $alias = 'from enity_array'; //maybe not needed
-        $primary = 'from enity_array';
-        $entity_info_array = entity_get_info($this->entity);
+        $alias = $this->entity_array[$entity]['alias'];
+        $primary = $this->entity_array[$entity]['primary'];
+        $bundle_fieldname = $this->entity_array[$entity]['bundle_fieldname'];
         /**
          * @todo use entity_get_info() in unpack_all_entities (instead of db_query)
          * * \_ pretty sure this will have it all, need to check though
          */
-        $bundle_fieldname = $entity_info_array['entity keys']['bundle'];
-        $sql = "SELECT $primary FROM $table_dbtng WHERE $bundle_fieldname = :bundle";
-        $fetchAll = 'the thing to get just the array of entity_ids, also use dbtng not SQL above';
+        $query = db_select($table, $alias)
+            ->condition($bundle_fieldname, $bundle_string)
+            ->fields($alias,array($primary));
+        //One way
+        $temp_output = $query->__toString();
+        $entity_id_array = $query->execute()->fetchAll();
+
+        // $sql = "SELECT $primary FROM $table_dbtng WHERE $bundle_fieldname = :bundle";
+        // $fetchAll = 'the thing to get just the array of entity_ids, also use dbtng not SQL above';
         // $fetchAll_OR_fetchAssoc = db_query($sql,
-        //         array(':bundle' => $bundle))->fetchAssoc();
+        // $temp_query = db_query($sql,
+            // array(':bundle' => $bundle));
+        // $temp_output = $temp_query->__toString();
 
 
 
 
 
+        $this->temp_output = $temp_output;
         $this->entity_id_array = $entity_id_array;
 
     }
@@ -713,10 +724,6 @@ class ael_backlog_object
             $this->output_string .= $trailing_output_string;
             return;
         }
-        $entity_info_array = entity_get_info();
-        // $bundle = $entity_info_array['entity keys']['bundle'];
-        // $this->temp_output = $bundle;
-        $this->temp_output = $entity_info_array;
 
         $this->output_string = "=====================================";
         $attribute_array = array(
@@ -732,7 +739,7 @@ class ael_backlog_object
         'option_dev',
         // 'feedback',
         'entity_id_array',
-        // 'entity_array',
+        'entity_array',
         'bundle_array',
         // 'ael_config',
         // 'ael_config_pattern',
@@ -874,7 +881,8 @@ class ael_backlog_object
     {
         $variable_name = 'entityreference:base-tables';
         $variable_default = 'MISSING: ' . $variable_name;
-        $entity_raw_array = variable_get($variable_name, $variable_default);
+        // $entity_raw_array = variable_get($variable_name, $variable_default);
+        $entity_raw_array = entity_get_info();
         $used_alias_array = array();
         $i = 0;
         function left_init($value) {return substr($value, 0, 1);}
@@ -913,10 +921,20 @@ class ael_backlog_object
             $alias_final = strlen($alias_final) < 1?$key:$alias_final;
             // $alias_final = $initials_try;
             $used_alias_array[] = $alias_final;
+            // $entity_array[$key]['name'] = $key;
+            // $entity_array[$key]['table'] = $value[0];
+            // $entity_array[$key]['alias'] = $alias_final;
+            // $entity_array[$key]['primary'] = $value[1];
             $entity_array[$key]['name'] = $key;
-            $entity_array[$key]['table'] = $value[0];
+            $entity_array[$key]['table'] = $value['base table'];
             $entity_array[$key]['alias'] = $alias_final;
-            $entity_array[$key]['primary'] = $value[1];
+            $entity_array[$key]['primary'] = $value['entity keys']['id'];
+            $bundle_fieldname = $value['entity keys']['bundle'];
+            $bundle_fieldname = empty($bundle_fieldname)?'EEMPTY':$bundle_fieldname;
+            $entity_array[$key]['bundle_fieldname'] = $bundle_fieldname;
+            /**
+             * @todo what to do when no bundle_fieldnams as above
+             */
 
             $i++;
         }
